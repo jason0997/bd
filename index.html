@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中文记忆配对游戏</title>
+    <!-- Tailwind CSS CDN for responsive and modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #f0f4f8; /* Light background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            margin: 0;
+            padding: 1rem; /* Padding around the game */
+            box-sizing: border-box;
+        }
+        .game-container {
+            background-color: #ffffff; /* White card-like background */
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            padding: 1.5rem;
+            max-width: 90vw; /* Adjusted max-width for 4x4 */
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem; /* Space between sections */
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* FIXED TO 4 COLUMNS */
+            gap: 0.75rem; /* Adjusted gap */
+            width: 100%;
+            max-width: 400px; /* Adjusted max-width for 4 columns */
+        }
+        .card {
+            width: 100%;
+            padding-top: 100%; /* Makes cards square */
+            position: relative;
+            cursor: pointer;
+            perspective: 1000px; /* For 3D flip effect */
+            background-color: #a7d9e8; /* Default card back color */
+            border-radius: 0.75rem; /* Rounded card corners */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.6s ease;
+        }
+        .card-inner {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d; /* Keeps children in 3D space */
+            border-radius: 0.75rem;
+        }
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            -webkit-backface-visibility: hidden; /* Hide back of card during flip */
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem; /* Adjusted font size for 4x4 grid */
+            font-weight: bold;
+            border-radius: 0.75rem;
+            box-sizing: border-box;
+        }
+        .card-front {
+            background-color: #e0f2fe; /* Light blue for card front */
+            transform: rotateY(180deg);
+            color: #000000; /* Explicitly black for visibility */
+        }
+        .card-back {
+            background-color: #a7d9e8; /* Matching card back color */
+            border: 2px solid #63b3ed; /* Border on back */
+        }
+        .card.matched .card-front {
+            background-color: #d1fae5; /* Green for matched cards */
+            color: #065f46;
+        }
+        /* Modal Overlay Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent black overlay */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Ensure it's on top of everything */
+            opacity: 0; /* Hidden by default */
+            visibility: hidden; /* Hidden by default */
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 2.5rem; /* Increased padding */
+            border-radius: 1rem;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2); /* Stronger shadow */
+            text-align: center;
+            max-width: 90vw;
+            width: 450px; /* Fixed width for better appearance */
+            transform: scale(0.9); /* Start slightly smaller */
+            transition: transform 0.3s ease;
+            position: relative; /* For close button positioning */
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1); /* Scale up when active */
+        }
+        .modal-message {
+            font-size: 1.8rem; /* Larger font for the message */
+            font-weight: bold;
+            color: #334155;
+            margin-bottom: 1.5rem;
+            line-height: 1.6; /* Improved readability */
+        }
+        .modal-close-button {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #94a3b8; /* Light gray for close button */
+            transition: color 0.2s ease;
+        }
+        .modal-close-button:hover {
+            color: #64748b; /* Darker gray on hover */
+        }
+
+        /* General Button Style */
+        .button-primary {
+            @apply px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200 ease-in-out;
+        }
+
+        /* Responsive adjustments for font size if needed for larger screens */
+        @media (min-width: 640px) { /* sm breakpoint */
+            .card-front, .card-back {
+                font-size: 2.5rem;
+            }
+            .modal-message {
+                font-size: 2rem;
+            }
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+             .card-front, .card-back {
+                font-size: 3rem;
+            }
+            .modal-message {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-2 text-center">中文记忆配对游戏</h1>
+        <p class="text-gray-600 text-center mb-4">点击卡片，翻开字符，找到相同的两张卡片！</p>
+
+        <div id="game-grid" class="grid-container">
+            <!-- Cards will be dynamically inserted here by JavaScript -->
+        </div>
+
+        <div id="message-box" class="mt-4"></div>
+
+        <button id="reset-button" class="button-primary">重新开始</button>
+    </div>
+
+    <!-- Custom Modal Structure -->
+    <div id="victory-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close-button" id="close-modal-button">&times;</button>
+            <div class="modal-message"></div>
+            <button id="modal-reset-button" class="button-primary mt-6">再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of Chinese characters for the game. Each character will appear twice.
+        const characters = ['福', '寿', '安', '康', '万', '事', '如', '意'];
+        let gameCards = []; // Stores the actual card elements and their properties
+        let flippedCards = []; // Stores the currently flipped cards (max 2)
+        let matchedPairs = 0; // Counts the number of matched pairs
+        let lockBoard = false; // Prevents further card flipping during a match check delay
+        let totalPairs = characters.length; // Total number of pairs in the game
+
+        const gameGrid = document.getElementById('game-grid');
+        const resetButton = document.getElementById('reset-button');
+        const messageBox = document.getElementById('message-box'); // Kept for consistency, though not used for win message now
+
+        // Modal elements
+        const victoryModal = document.getElementById('victory-modal');
+        const modalMessage = victoryModal.querySelector('.modal-message');
+        const closeModalButton = document.getElementById('close-modal-button');
+        const modalResetButton = document.getElementById('modal-reset-button');
+
+        // Fisher-Yates (Knuth) Shuffle algorithm
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+            }
+            return array;
+        }
+
+        // Initializes the game board
+        function initializeGame() {
+            // Combine characters to create pairs
+            const duplicatedCharacters = [...characters, ...characters];
+            // Shuffle the characters for random placement
+            const shuffledCharacters = shuffleArray(duplicatedCharacters);
+
+            // Clear any existing cards from previous games
+            gameGrid.innerHTML = '';
+            gameCards = [];
+            flippedCards = [];
+            matchedPairs = 0;
+            lockBoard = false;
+            messageBox.textContent = ''; // Clear any lingering message from the old message box
+            hideVictoryModal(); // Ensure modal is hidden when starting a new game
+
+            // Dynamically create and append card elements to the grid
+            shuffledCharacters.forEach((char, index) => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.index = index; // Store original index for debugging, if needed
+                card.dataset.char = char; // Store the character value for matching
+
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front">${char}</div>
+                        <div class="card-back"></div>
+                    </div>
+                `;
+                card.addEventListener('click', () => flipCard(card)); // Add click listener to each card
+                gameGrid.appendChild(card);
+                gameCards.push(card); // Keep a reference to the card elements
+            });
+        }
+
+        // Handles the card flipping logic
+        function flipCard(card) {
+            // If board is locked or card is already flipped/matched, do nothing
+            if (lockBoard || card.classList.contains('flipped') || card.classList.contains('matched')) {
+                return;
+            }
+
+            card.classList.add('flipped'); // Add 'flipped' class to show the front of the card
+            flippedCards.push(card); // Add the flipped card to our temporary array
+
+            if (flippedCards.length === 2) {
+                // If two cards are flipped, lock the board to prevent further clicks
+                lockBoard = true;
+                checkForMatch(); // Check if the two flipped cards are a match
+            }
+        }
+
+        // Checks if the two flipped cards are a match
+        function checkForMatch() {
+            const [card1, card2] = flippedCards;
+            const isMatch = card1.dataset.char === card2.dataset.char; // Compare characters
+
+            if (isMatch) {
+                // If they match, mark them as 'matched' and disable further clicks
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                matchedPairs++; // Increment matched pairs count
+                resetFlippedCards(); // Reset the flipped cards array
+                if (matchedPairs === totalPairs) {
+                    // If all pairs are matched, the game is won
+                    setTimeout(() => {
+                        // Updated message with segments and emojis, separated by <br> for new lines
+                        const blessingMessage = '祝叔叔生日快乐🎂<br>身体健康💪<br>福寿安康🌿<br>万事如意🎉';
+                        showVictoryModal(blessingMessage); // Show custom modal
+                    }, 500); // Small delay for visual effect
+                }
+            } else {
+                // If they don't match, flip them back after a delay
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    resetFlippedCards(); // Reset the flipped cards array and unlock the board
+                }, 1000); // 1-second delay before flipping back
+            }
+        }
+
+        // Resets the temporary array of flipped cards and unlocks the board
+        function resetFlippedCards() {
+            flippedCards = [];
+            lockBoard = false; // Unlock the board after handling the flipped cards
+        }
+
+        // Function to show the victory modal
+        function showVictoryModal(message) {
+            modalMessage.innerHTML = message; // Changed to innerHTML to interpret <br> tags
+            victoryModal.classList.add('active');
+        }
+
+        // Function to hide the victory modal
+        function hideVictoryModal() {
+            victoryModal.classList.remove('active');
+        }
+
+        // Event listener for the main reset button
+        resetButton.addEventListener('click', initializeGame);
+
+        // Event listeners for modal buttons
+        closeModalButton.addEventListener('click', hideVictoryModal);
+        modalResetButton.addEventListener('click', () => {
+            hideVictoryModal();
+            initializeGame();
+        });
+
+        // Initialize the game when the page loads
+        window.onload = initializeGame;
+    </script>
+</body>
+</html>
+
