@@ -192,7 +192,7 @@
         <div class="modal-content">
             <button class="modal-close-button" id="close-modal-button">&times;</button>
             <div class="modal-message"></div>
-            <button id="modal-reset-button" class="button-primary mt-6">再玩一次</button>
+            <button id="modal-reset-button" class="button-primary mt-6">下一页</button>
         </div>
     </div>
 
@@ -328,8 +328,8 @@
         // Event listeners for modal buttons
         closeModalButton.addEventListener('click', hideVictoryModal);
         modalResetButton.addEventListener('click', () => {
-            hideVictoryModal();
-            initializeGame();
+            // Redirect to page2.html when "下一页" button is clicked
+            window.location.href = 'page2.html';
         });
 
         // Initialize the game when the page loads
@@ -337,4 +337,3 @@
     </script>
 </body>
 </html>
-

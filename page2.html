@@ -1,366 +1,441 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生日快乐吹蜡烛游戏</title>
+    <!-- 引入 Tailwind CSS CDN，用于样式 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 React 和 ReactDOM CDN -->
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <!-- 引入 Babel CDN，用于实时转译 JSX -->
+    <!-- 注意：在生产环境中，应该提前编译好 JSX，而不是使用 Babel CDN -->
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+    <style>
+        /* 为 Inter 字体设置一个回退，确保在任何设备上都能有良好的显示 */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* 定义动画效果，与 React 组件中的 Tailwind 类对应 */
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(-5%);
+                animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+            }
+            50% {
+                transform: translateY(0);
+                animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+            }
+        }
+        @keyframes bounce-slow {
+            0%, 100% {
+                transform: translateY(-5%);
+                animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+            }
+            50% {
+                transform: translateY(0);
+                animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+            }
+        }
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .animate-bounce {
+            animation: bounce 1s infinite;
+        }
+        .animate-bounce-slow {
+            animation: bounce-slow 2s infinite; /* 慢速弹跳 */
+        }
+        .animate-fade-in-up {
+            animation: fadeInScale 0.5s ease-out forwards; /* 弹窗淡入放大效果 */
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div> <!-- React 应用将挂载到这个 div 上 -->
 
-const App = () => {
-  const canvasRef = useRef(null); // Canvas 元素的引用
-  const audioContextRef = useRef(null); // AudioContext 的引用，用于处理音频
-  const analyserRef = useRef(null); // AnalyserNode 的引用，用于分析音频数据
-  const micStreamRef = useRef(null); // 麦克风媒体流的引用
-  const animationFrameIdRef = useRef(null); // requestAnimationFrame ID 的引用，用于停止音频分析循环
+    <script type="text/babel">
+        // 粘贴您之前获得的 React App 组件代码在这里
+        // 注意：这里不再使用 import 语句，因为 React 和它的 Hooks 已通过 CDN 全局引入
+        const { useRef, useEffect, useState, useCallback } = React; // 从全局 React 对象解构 Hooks
 
-  // 状态变量，用于管理游戏逻辑和 UI
-  const [candlesLit, setCandlesLit] = useState(true); // 蜡烛是否点亮
-  const [message, setMessage] = useState("请尝试吹灭蜡烛！"); // 显示给用户的信息
-  const [isMicActive, setIsMicActive] = useState(false); // 麦克风是否正在使用
-  const [isGameEnded, setIsGameEnded] = useState(false); // 游戏是否结束（蜡烛已吹灭）
-  // 吹气阈值：此值决定麦克风输入需要多大才能被识别为“吹气”。现在固定为一个默认值。
-  const BLOW_THRESHOLD_FIXED = 120; // 将阈值固定在代码中，不再通过UI调整
+        const App = () => {
+          const canvasRef = useRef(null); // Canvas 元素的引用
+          const audioContextRef = useRef(null); // AudioContext 的引用，用于处理音频
+          const analyserRef = useRef(null); // AnalyserNode 的引用，用于分析音频数据
+          const micStreamRef = useRef(null); // 麦克风媒体流的引用
+          const animationFrameIdRef = useRef(null); // requestAnimationFrame ID 的引用，用于停止音频分析循环
 
-  // 绘制蛋糕和蜡烛的常量颜色 - 更新为更温馨的颜色方案
-  const CAKE_BODY_COLOR = '#F5B041'; // 蛋糕主体颜色 (柔和的奶油色)
-  const CAKE_SHADOW_COLOR = '#C38B27'; // 蛋糕阴影颜色
-  const ICING_COLOR_TOP = '#FFD700'; // 蛋糕顶部糖霜 (金黄色)
-  const ICING_COLOR_MIDDLE = '#FFC300'; // 蛋糕中间糖霜 (较深的金黄)
-  const CANDLE_COLOR_BASE = '#FF6F61'; // 蜡烛颜色 (柔和的珊瑚红)
-  const CANDLE_COLOR_STRIPE = '#FFC0CB'; // 蜡烛条纹 (淡粉色)
-  const FLAME_COLOR_INNER = '#FFFF00'; // 火焰内层颜色 (亮黄色)
-  const FLAME_COLOR_OUTER = '#FF8C00'; // 火焰外层颜色 (深橙色)
-  const WICK_COLOR = '#8B4513'; // 蜡烛芯颜色 (鞍棕色)
-  const TABLE_COLOR = '#8B4513'; // 桌子颜色 (用于蛋糕底座)
+          // 状态变量，用于管理游戏逻辑和 UI
+          const [candlesLit, setCandlesLit] = useState(true); // 蜡烛是否点亮
+          const [message, setMessage] = useState("请尝试吹灭蜡烛！"); // 显示给用户的信息
+          const [isMicActive, setIsMicActive] = useState(false); // 麦克风是否正在使用
+          const [isGameEnded, setIsGameEnded] = useState(false); // 游戏是否结束（蜡烛已吹灭）
+          // 吹气阈值：此值决定麦克风输入需要多大才能被识别为“吹气”。现在固定为一个默认值。
+          const BLOW_THRESHOLD_FIXED = 120; // 将阈值固定在代码中，不再通过UI调整
 
-  // 音频检测常量
-  // SAMPLE_SIZE: 用于吹气检测的频率区间的平均数。较小的值响应更快，但可能不太准确。
-  const SAMPLE_SIZE = 128;
+          // 绘制蛋糕和蜡烛的常量颜色 - 更新为更温馨的颜色方案
+          const CAKE_BODY_COLOR = '#F5B041'; // 蛋糕主体颜色 (柔和的奶油色)
+          const CAKE_SHADOW_COLOR = '#C38B27'; // 蛋糕阴影颜色
+          const ICING_COLOR_TOP = '#FFD700'; // 蛋糕顶部糖霜 (金黄色)
+          const ICING_COLOR_MIDDLE = '#FFC300'; // 蛋糕中间糖霜 (较深的金黄)
+          const CANDLE_COLOR_BASE = '#FF6F61'; // 蜡烛颜色 (柔和的珊瑚红)
+          const CANDLE_COLOR_STRIPE = '#FFC0CB'; // 蜡烛条纹 (淡粉色)
+          const FLAME_COLOR_INNER = '#FFFF00'; // 火焰内层颜色 (亮黄色)
+          const FLAME_COLOR_OUTER = '#FF8C00'; // 火焰外层颜色 (深橙色)
+          const WICK_COLOR = '#8B4513'; // 蜡烛芯颜色 (鞍棕色)
+          const TABLE_COLOR = '#8B4513'; // 桌子颜色 (用于蛋糕底座)
 
-  // -------------------- 音频处理函数 --------------------
+          // 音频检测常量
+          // SAMPLE_SIZE: 用于吹气检测的频率区间的平均数。较小的值响应更快，但可能不太准确。
+          const SAMPLE_SIZE = 128;
 
-  // 停止麦克风输入和音频处理
-  const stopBlowing = useCallback(() => {
-    // 停止麦克风流中的所有音轨
-    if (micStreamRef.current) {
-      micStreamRef.current.getTracks().forEach(track => track.stop());
-      micStreamRef.current = null;
-    }
-    // 关闭 AudioContext 以释放音频资源
-    if (audioContextRef.current) {
-      audioContextRef.current.close().catch(e => console.error("关闭 AudioContext 错误:", e));
-      audioContextRef.current = null;
-    }
-    // 取消任何待处理的 requestAnimationFrame
-    if (animationFrameIdRef.current) {
-      cancelAnimationFrame(animationFrameIdRef.current);
-      animationFrameIdRef.current = null;
-    }
-    setIsMicActive(false); // 更新状态：麦克风不活跃
-  }, []); // 此函数不依赖任何状态或 props，所以依赖数组为空
+          // -------------------- 音频处理函数 --------------------
 
-  // 持续分析麦克风音频输入
-  const analyzeAudio = useCallback(() => {
-    // 如果分析器不可用，或者蜡烛已灭，或者游戏已结束，则停止分析
-    if (!analyserRef.current || !candlesLit || isGameEnded) {
-      animationFrameIdRef.current = null; // 清除动画帧 ID
-      return;
-    }
+          // 停止麦克风输入和音频处理
+          const stopBlowing = useCallback(() => {
+            // 停止麦克风流中的所有音轨
+            if (micStreamRef.current) {
+              micStreamRef.current.getTracks().forEach(track => track.stop());
+              micStreamRef.current = null;
+            }
+            // 关闭 AudioContext 以释放音频资源
+            if (audioContextRef.current) {
+              audioContextRef.current.close().catch(e => console.error("关闭 AudioContext 错误:", e));
+              audioContextRef.current = null;
+            }
+            // 取消任何待处理的 requestAnimationFrame
+            if (animationFrameIdRef.current) {
+              cancelAnimationFrame(animationFrameIdRef.current);
+              animationFrameIdRef.current = null;
+            }
+            setIsMicActive(false); // 更新状态：麦克风不活跃
+          }, []); // 此函数不依赖任何状态或 props，所以依赖数组为空
 
-    // 从分析器获取频率数据 (值范围 0-255)
-    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-    analyserRef.current.getByteFrequencyData(dataArray);
+          // 持续分析麦克风音频输入
+          const analyzeAudio = useCallback(() => {
+            // 如果分析器不可用，或者蜡烛已灭，或者游戏已结束，则停止分析
+            if (!analyserRef.current || !candlesLit || isGameEnded) {
+              animationFrameIdRef.current = null; // 清除动画帧 ID
+              return;
+            }
 
-    // 计算部分频率数据的平均振幅
-    let sum = 0;
-    for (let i = 0; i < SAMPLE_SIZE; i++) {
-      sum += dataArray[i];
-    }
-    const average = sum / SAMPLE_SIZE;
+            // 从分析器获取频率数据 (值范围 0-255)
+            const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+            analyserRef.current.getByteFrequencyData(dataArray);
 
-    // 检查平均振幅是否超过吹气阈值
-    if (average > BLOW_THRESHOLD_FIXED) { // 使用固定的阈值
-      setCandlesLit(false); // 吹灭蜡烛
-      setMessage("生日快乐！"); // 更新信息
-      setIsGameEnded(true); // 标记游戏结束
-      stopBlowing(); // 停止麦克风和分析
-    } else {
-      // 如果未检测到吹气，则在下一帧继续分析
-      animationFrameIdRef.current = requestAnimationFrame(analyzeAudio);
-    }
-  }, [candlesLit, isGameEnded, stopBlowing]); // 依赖项：这些状态变化时重新创建函数
+            // 计算部分频率数据的平均振幅
+            let sum = 0;
+            for (let i = 0; i < SAMPLE_SIZE; i++) {
+              sum += dataArray[i];
+            }
+            const average = sum / SAMPLE_SIZE;
 
-  // 开始访问麦克风并开始音频分析
-  const startBlowing = useCallback(async () => {
-    if (isMicActive) return; // 如果麦克风已活跃，则不重复尝试
+            // 检查平均振幅是否超过吹气阈值
+            if (average > BLOW_THRESHOLD_FIXED) { // 使用固定的阈值
+              setCandlesLit(false); // 吹灭蜡烛
+              setMessage("生日快乐！"); // 更新信息
+              setIsGameEnded(true); // 标记游戏结束
+              stopBlowing(); // 停止麦克风和分析
+            } else {
+              // 如果未检测到吹气，则在下一帧继续分析
+              animationFrameIdRef.current = requestAnimationFrame(analyzeAudio);
+            }
+          }, [candlesLit, isGameEnded, stopBlowing]); // 依赖项：这些状态变化时重新创建函数
 
-    try {
-      // 请求访问用户麦克风
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      micStreamRef.current = stream; // 存储流引用
+          // 开始访问麦克风并开始音频分析
+          const startBlowing = useCallback(async () => {
+            if (isMicActive) return; // 如果麦克风已活跃，则不重复尝试
 
-      // 创建 AudioContext (浏览器音频处理图)
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      audioContextRef.current = audioContext;
+            try {
+              // 请求访问用户麦克风
+              const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+              micStreamRef.current = stream; // 存储流引用
 
-      // 创建 AnalyserNode 以获取音频数据
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256; // 快速傅里叶变换大小 (2 的幂)
-      analyserRef.current = analyser;
+              // 创建 AudioContext (浏览器音频处理图)
+              const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+              audioContextRef.current = audioContext;
 
-      // 从麦克风流创建 AudioNode
-      const source = audioContext.createMediaStreamSource(stream);
-      // 将麦克风源连接到分析器
-      source.connect(analyser);
+              // 创建 AnalyserNode 以获取音频数据
+              const analyser = audioContext.createAnalyser();
+              analyser.fftSize = 256; // 快速傅里叶变换大小 (2 的幂)
+              analyserRef.current = analyser;
 
-      setIsMicActive(true); // 更新状态：麦克风活跃
-      setMessage("请尝试吹灭蜡烛！"); // 设置初始信息
-      // 开始音频分析循环
-      animationFrameIdRef.current = requestAnimationFrame(analyzeAudio);
-    } catch (err) {
-      // 处理麦克风访问被拒绝或不可用的错误
-      console.error("访问麦克风错误:", err);
-      setMessage("无法访问麦克风。请检查权限或尝试刷新页面。");
-      setIsMicActive(false); // 更新状态：麦克风不活跃
-    }
-  }, [isMicActive, analyzeAudio]); // 依赖项：这些状态变化时重新创建函数
+              // 从麦克风流创建 AudioNode
+              const source = audioContext.createMediaStreamSource(stream);
+              // 将麦克风源连接到分析器
+              source.connect(analyser);
 
-  // -------------------- 绘图函数 - 改进的蛋糕和蜡烛样式 --------------------
+              setIsMicActive(true); // 更新状态：麦克风活跃
+              setMessage("请尝试吹灭蜡烛！"); // 设置初始信息
+              // 开始音频分析循环
+              animationFrameIdRef.current = requestAnimationFrame(analyzeAudio);
+            } catch (err) {
+              // 处理麦克风访问被拒绝或不可用的错误
+              console.error("访问麦克风错误:", err);
+              setMessage("无法访问麦克风。请检查权限或尝试刷新页面。");
+              setIsMicActive(false); // 更新状态：麦克风不活跃
+            }
+          }, [isMicActive, analyzeAudio]); // 依赖项：这些状态变化时重新创建函数
 
-  // 绘制生日蛋糕
-  const drawCake = useCallback((ctx, width, height) => {
-    ctx.clearRect(0, 0, width, height); // 绘制前清空整个画布
+          // -------------------- 绘图函数 - 改进的蛋糕和蜡烛样式 --------------------
 
-    // 计算蛋糕尺寸，使其适应响应式布局
-    const cakeHeight = height * 0.4;
-    const cakeWidth = width * 0.7;
-    const cakeX = (width - cakeWidth) / 2;
-    const cakeY = height - cakeHeight - 20; // 距离底部 20px
+          // 绘制生日蛋糕
+          const drawCake = useCallback((ctx, width, height) => {
+            ctx.clearRect(0, 0, width, height); // 绘制前清空整个画布
 
-    // 绘制桌子 (蛋糕底座)
-    ctx.fillStyle = TABLE_COLOR;
-    ctx.fillRect(0, height - 50, width, 50); // 宽屏桌子，高 50px
+            // 计算蛋糕尺寸，使其适应响应式布局
+            const cakeHeight = height * 0.4;
+            const cakeWidth = width * 0.7;
+            const cakeX = (width - cakeWidth) / 2;
+            const cakeY = height - cakeHeight - 20; // 距离底部 20px
 
-    // 绘制蛋糕主体 (两层)
-    const layerHeight = cakeHeight / 2;
-    // 底层蛋糕
-    ctx.fillStyle = CAKE_BODY_COLOR;
-    ctx.beginPath();
-    ctx.ellipse(cakeX + cakeWidth / 2, cakeY + cakeHeight / 2 + layerHeight / 2, cakeWidth / 2, layerHeight / 2, 0, Math.PI, 2 * Math.PI, false);
-    ctx.rect(cakeX, cakeY + cakeHeight / 2, cakeWidth, layerHeight);
-    ctx.closePath();
-    ctx.fill();
+            // 绘制桌子 (蛋糕底座)
+            ctx.fillStyle = TABLE_COLOR;
+            ctx.fillRect(0, height - 50, width, 50); // 宽屏桌子，高 50px
 
-    // 中间糖霜层
-    ctx.fillStyle = ICING_COLOR_MIDDLE;
-    ctx.beginPath();
-    ctx.ellipse(cakeX + cakeWidth / 2, cakeY + cakeHeight / 2, cakeWidth / 2, layerHeight * 0.2, 0, 0, 2 * Math.PI);
-    ctx.fill();
+            // 绘制蛋糕主体 (两层)
+            const layerHeight = cakeHeight / 2;
+            // 底层蛋糕
+            ctx.fillStyle = CAKE_BODY_COLOR;
+            ctx.beginPath();
+            ctx.ellipse(cakeX + cakeWidth / 2, cakeY + cakeHeight / 2 + layerHeight / 2, cakeWidth / 2, layerHeight / 2, 0, Math.PI, 2 * Math.PI, false);
+            ctx.rect(cakeX, cakeY + cakeHeight / 2, cakeWidth, layerHeight);
+            ctx.closePath();
+            ctx.fill();
 
-    // 顶层蛋糕
-    const topCakeWidth = cakeWidth * 0.8;
-    const topCakeX = cakeX + (cakeWidth - topCakeWidth) / 2;
-    const topCakeY = cakeY;
-    ctx.fillStyle = CAKE_BODY_COLOR;
-    ctx.beginPath();
-    ctx.ellipse(topCakeX + topCakeWidth / 2, topCakeY + layerHeight / 2, topCakeWidth / 2, layerHeight / 2, 0, Math.PI, 2 * Math.PI, false);
-    ctx.rect(topCakeX, topCakeY, topCakeWidth, layerHeight);
-    ctx.closePath();
-    ctx.fill();
+            // 中间糖霜层
+            ctx.fillStyle = ICING_COLOR_MIDDLE;
+            ctx.beginPath();
+            ctx.ellipse(cakeX + cakeWidth / 2, cakeY + cakeHeight / 2, cakeWidth / 2, layerHeight * 0.2, 0, 0, 2 * Math.PI);
+            ctx.fill();
 
-    // 顶部糖霜层
-    ctx.fillStyle = ICING_COLOR_TOP;
-    ctx.beginPath();
-    ctx.ellipse(topCakeX + topCakeWidth / 2, topCakeY + layerHeight / 2, topCakeWidth / 2, layerHeight * 0.2, 0, 0, 2 * Math.PI);
-    ctx.fill();
+            // 顶层蛋糕
+            const topCakeWidth = cakeWidth * 0.8;
+            const topCakeX = cakeX + (cakeWidth - topCakeWidth) / 2;
+            const topCakeY = cakeY;
+            ctx.fillStyle = CAKE_BODY_COLOR;
+            ctx.beginPath();
+            ctx.ellipse(topCakeX + topCakeWidth / 2, topCakeY + layerHeight / 2, topCakeWidth / 2, layerHeight / 2, 0, Math.PI, 2 * Math.PI, false);
+            ctx.rect(topCakeX, topCakeY, topCakeWidth, layerHeight);
+            ctx.closePath();
+            ctx.fill();
 
-    // 增加蛋糕的阴影和高光效果
-    // 阴影
-    ctx.fillStyle = CAKE_SHADOW_COLOR;
-    ctx.beginPath();
-    ctx.ellipse(cakeX + cakeWidth / 2, cakeY + cakeHeight + 5, cakeWidth / 2, cakeHeight * 0.05, 0, 0, 2 * Math.PI);
-    ctx.fill();
+            // 顶部糖霜层
+            ctx.fillStyle = ICING_COLOR_TOP;
+            ctx.beginPath();
+            ctx.ellipse(topCakeX + topCakeWidth / 2, topCakeY + layerHeight / 2, topCakeWidth / 2, layerHeight * 0.2, 0, 0, 2 * Math.PI);
+            ctx.fill();
 
-    // 糖霜边缘装饰（波浪线）
-    ctx.strokeStyle = ICING_COLOR_TOP;
-    ctx.lineWidth = 3;
-    // 顶部糖霜边缘
-    ctx.beginPath();
-    for (let i = 0; i <= 20; i++) {
-      const x = topCakeX + (topCakeWidth / 20) * i;
-      const y = topCakeY + layerHeight / 2 + (i % 2 === 0 ? -5 : 5);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
+            // 增加蛋糕的阴影和高光效果
+            // 阴影
+            ctx.fillStyle = CAKE_SHADOW_COLOR;
+            ctx.beginPath();
+            ctx.ellipse(cakeX + cakeWidth / 2, cakeY + cakeHeight + 5, cakeWidth / 2, cakeHeight * 0.05, 0, 0, 2 * Math.PI);
+            ctx.fill();
 
-    // 中间糖霜边缘
-    ctx.beginPath();
-    for (let i = 0; i <= 20; i++) {
-      const x = cakeX + (cakeWidth / 20) * i;
-      const y = cakeY + cakeHeight / 2 + (i % 2 === 0 ? -5 : 5);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
+            // 糖霜边缘装饰（波浪线）
+            ctx.strokeStyle = ICING_COLOR_TOP;
+            ctx.lineWidth = 3;
+            // 顶部糖霜边缘
+            ctx.beginPath();
+            for (let i = 0; i <= 20; i++) {
+              const x = topCakeX + (topCakeWidth / 20) * i;
+              const y = topCakeY + layerHeight / 2 + (i % 2 === 0 ? -5 : 5);
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
 
-  }, []);
+            // 中间糖霜边缘
+            ctx.beginPath();
+            for (let i = 0; i <= 20; i++) {
+              const x = cakeX + (cakeWidth / 20) * i;
+              const y = cakeY + cakeHeight / 2 + (i % 2 === 0 ? -5 : 5);
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
 
-  // 绘制蜡烛 (点亮或熄灭状态)
-  const drawCandles = useCallback((ctx, lit, width, height) => {
-    const cakeWidth = width * 0.7;
-    const topCakeWidth = cakeWidth * 0.8;
-    const topCakeX = (width - topCakeWidth) / 2;
-    const topCakeY = height * 0.6 - 20; // 蜡烛位于蛋糕顶层上方
+          }, []);
 
-    const candleCount = 6; // 60岁生日，简单起见显示 6 支蜡烛
-    const candleWidth = topCakeWidth / (candleCount * 1.5); // 调整蜡烛宽度以适应新的蛋糕
-    const candleHeight = height * 0.18; // 增加蜡烛高度
+          // 绘制蜡烛 (点亮或熄灭状态)
+          const drawCandles = useCallback((ctx, lit, width, height) => {
+            const cakeWidth = width * 0.7;
+            const topCakeWidth = cakeWidth * 0.8;
+            const topCakeX = (width - topCakeWidth) / 2;
+            const topCakeY = height * 0.6 - 20; // 蜡烛位于蛋糕顶层上方
 
-    // 循环绘制每支蜡烛
-    for (let i = 0; i < candleCount; i++) {
-      const candleX = topCakeX + (i + 0.5) * (topCakeWidth / candleCount) - candleWidth / 2;
-      const candleY = topCakeY - candleHeight + 10; // 稍微向下调整，让蜡烛插入蛋糕
+            const candleCount = 6; // 60岁生日，简单起见显示 6 支蜡烛
+            const candleWidth = topCakeWidth / (candleCount * 1.5); // 调整蜡烛宽度以适应新的蛋糕
+            const candleHeight = height * 0.18; // 增加蜡烛高度
 
-      // 绘制蜡烛主体
-      ctx.fillStyle = CANDLE_COLOR_BASE;
-      ctx.fillRect(candleX, candleY, candleWidth, candleHeight);
+            // 循环绘制每支蜡烛
+            for (let i = 0; i < candleCount; i++) {
+              const candleX = topCakeX + (i + 0.5) * (topCakeWidth / candleCount) - candleWidth / 2;
+              const candleY = topCakeY - candleHeight + 10; // 稍微向下调整，让蜡烛插入蛋糕
 
-      // 绘制蜡烛上的条纹
-      ctx.fillStyle = CANDLE_COLOR_STRIPE;
-      for (let j = 0; j < 3; j++) {
-        ctx.fillRect(candleX, candleY + candleHeight / 4 + j * (candleHeight / 4), candleWidth, candleHeight / 10);
-      }
+              // 绘制蜡烛主体
+              ctx.fillStyle = CANDLE_COLOR_BASE;
+              ctx.fillRect(candleX, candleY, candleWidth, candleHeight);
 
-      // 绘制蜡烛芯
-      ctx.fillStyle = WICK_COLOR;
-      ctx.fillRect(candleX + candleWidth / 2 - 1, candleY - 5, 2, 8); // 芯的位置和大小
+              // 绘制蜡烛上的条纹
+              ctx.fillStyle = CANDLE_COLOR_STRIPE;
+              for (let j = 0; j < 3; j++) {
+                ctx.fillRect(candleX, candleY + candleHeight / 4 + j * (candleHeight / 4), candleWidth, candleHeight / 10);
+              }
 
-      // 如果蜡烛点亮，则绘制火焰
-      if (lit) {
-        // 外层火焰 (深橙色，较大，更椭圆)
-        ctx.beginPath();
-        ctx.ellipse(candleX + candleWidth / 2, candleY - 12, candleWidth / 2.5, candleWidth * 0.7, 0, 0, 2 * Math.PI);
-        ctx.fillStyle = FLAME_COLOR_OUTER;
-        ctx.fill();
+              // 绘制蜡烛芯
+              ctx.fillStyle = WICK_COLOR;
+              ctx.fillRect(candleX + candleWidth / 2 - 1, candleY - 5, 2, 8); // 芯的位置和大小
 
-        // 内层火焰 (亮黄色，较小，更椭圆)
-        ctx.beginPath();
-        ctx.ellipse(candleX + candleWidth / 2, candleY - 12, candleWidth / 4, candleWidth * 0.4, 0, 0, 2 * Math.PI);
-        ctx.fillStyle = FLAME_COLOR_INNER;
-        ctx.fill();
-      }
-    }
-  }, []);
+              // 如果蜡烛点亮，则绘制火焰
+              if (lit) {
+                // 外层火焰 (深橙色，较大，更椭圆)
+                ctx.beginPath();
+                ctx.ellipse(candleX + candleWidth / 2, candleY - 12, candleWidth / 2.5, candleWidth * 0.7, 0, 0, 2 * Math.PI);
+                ctx.fillStyle = FLAME_COLOR_OUTER;
+                ctx.fill();
 
-  // 主函数：绘制整个场景 (蛋糕和蜡烛)
-  const drawScene = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+                // 内层火焰 (亮黄色，较小，更椭圆)
+                ctx.beginPath();
+                ctx.ellipse(candleX + candleWidth / 2, candleY - 12, candleWidth / 4, candleWidth * 0.4, 0, 0, 2 * Math.PI);
+                ctx.fillStyle = FLAME_COLOR_INNER;
+                ctx.fill();
+              }
+            }
+          }, []);
 
-    const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1; // 获取设备像素比，用于在高 DPI 屏幕上清晰渲染
-    const rect = canvas.getBoundingClientRect(); // 获取 canvas 元素的当前大小
+          // 主函数：绘制整个场景 (蛋糕和蜡烛)
+          const drawScene = useCallback(() => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
 
-    // 根据显示大小和设备像素比设置 canvas 绘图缓冲区大小
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr); // 缩放上下文以匹配设备像素比
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1; // 获取设备像素比，用于在高 DPI 屏幕上清晰渲染
+            const rect = canvas.getBoundingClientRect(); // 获取 canvas 元素的当前大小
 
-    drawCake(ctx, rect.width, rect.height);
-    drawCandles(ctx, candlesLit, rect.width, rect.height);
-  }, [drawCake, drawCandles, candlesLit]); // 依赖项：蜡烛点亮状态变化时重新绘制
+            // 根据显示大小和设备像素比设置 canvas 绘图缓冲区大小
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr); // 缩放上下文以匹配设备像素比
 
-  // -------------------- 游戏逻辑函数 --------------------
+            drawCake(ctx, rect.width, rect.height);
+            drawCandles(ctx, candlesLit, rect.width, rect.height);
+          }, [drawCake, drawCandles, candlesLit]); // 依赖项：蜡烛点亮状态变化时重新绘制
 
-  // 重置游戏到初始状态
-  const resetGame = useCallback(() => {
-    stopBlowing(); // 重置前确保麦克风已停止
-    setCandlesLit(true); // 重新点燃蜡烛
-    setMessage("请尝试吹灭蜡烛！"); // 重置信息
-    setIsGameEnded(false); // 重置游戏结束状态
-    startBlowing(); // 自动重新开始麦克风检测
-  }, [stopBlowing, startBlowing]); // 依赖项：这些函数变化时重新创建函数
+          // -------------------- 游戏逻辑函数 --------------------
 
-  // -------------------- 副作用钩子 (Effects) --------------------
+          // 重置游戏到初始状态
+          const resetGame = useCallback(() => {
+            stopBlowing(); // 重置前确保麦克风已停止
+            setCandlesLit(true); // 重新点燃蜡烛
+            setMessage("请尝试吹灭蜡烛！"); // 重置信息
+            setIsGameEnded(false); // 重置游戏结束状态
+            startBlowing(); // 自动重新开始麦克风检测
+          }, [stopBlowing, startBlowing]); // 依赖项：这些函数变化时重新创建函数
 
-  // 效果钩子：用于初始绘制和处理 canvas 尺寸变化
-  useEffect(() => {
-    drawScene(); // 组件挂载时进行初始绘制
-    const handleResize = () => drawScene(); // 窗口大小变化时重新绘制
-    window.addEventListener('resize', handleResize); // 添加尺寸变化监听器
+          // -------------------- 副作用钩子 (Effects) --------------------
 
-    // 清理函数：组件卸载时移除事件监听器
-    return () => window.removeEventListener('resize', handleResize);
-  }, [drawScene]); // 依赖项：drawScene 函数变化时（在此处不太可能）重新运行此 effect
+          // 效果钩子：用于初始绘制和处理 canvas 尺寸变化
+          useEffect(() => {
+            drawScene(); // 组件挂载时进行初始绘制
+            const handleResize = () => drawScene(); // 窗口大小变化时重新绘制
+            window.addEventListener('resize', handleResize); // 添加尺寸变化监听器
 
-  // 效果钩子：管理麦克风状态并在组件挂载或状态变化时开始分析
-  useEffect(() => {
-    // 仅在游戏未结束、麦克风不活跃且蜡烛点亮时开始吹气检测
-    if (!isGameEnded && !isMicActive && candlesLit) {
-      startBlowing();
-    }
-    // 清理函数：组件卸载或依赖项变化时确保麦克风停止
-    return () => {
-      stopBlowing();
-    };
-  }, [startBlowing, stopBlowing, isMicActive, candlesLit, isGameEnded]); // 依赖项
+            // 清理函数：组件卸载时移除事件监听器
+            return () => window.removeEventListener('resize', handleResize);
+          }, [drawScene]); // 依赖项：drawScene 函数变化时（在此处不太可能）重新运行此 effect
 
-  // 效果钩子：每当 'candlesLit' 状态改变时重新绘制场景
-  useEffect(() => {
-    drawScene();
-  }, [candlesLit, drawScene]); // 依赖项：candlesLit 改变时重新绘制
+          // 效果钩子：管理麦克风状态并在组件挂载或状态变化时开始分析
+          useEffect(() => {
+            // 仅在游戏未结束、麦克风不活跃且蜡烛点亮时开始吹气检测
+            if (!isGameEnded && !isMicActive && candlesLit) {
+              startBlowing();
+            }
+            // 清理函数：组件卸载或依赖项变化时确保麦克风停止
+            return () => {
+              stopBlowing();
+            };
+          }, [startBlowing, stopBlowing, isMicActive, candlesLit, isGameEnded]); // 依赖项
 
-  return (
-    // 游戏主容器，使用 Tailwind CSS 进行响应式布局和居中
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 p-4 font-inter">
-      {/* 游戏内容卡片 */}
-      <div className="bg-white p-6 rounded-lg shadow-xl max-w-lg w-full text-center">
-        {/* 生日祝福标题 */}
-        <h1 className="text-4xl font-bold text-gray-800 mb-4 animate-bounce">
-          生日快乐！🎉
-        </h1>
+          // 效果钩子：每当 'candlesLit' 状态改变时重新绘制场景
+          useEffect(() => {
+            drawScene();
+          }, [candlesLit, drawScene]); // 依赖项：candlesLit 改变时重新绘制
 
-        {/* 蛋糕和蜡烛的 Canvas 容器 */}
-        <div className="relative w-full max-w-md mx-auto aspect-video mb-6">
-          <canvas
-            ref={canvasRef} // 将 ref 赋值给 canvas 元素
-            className="w-full h-full border-4 border-yellow-400 rounded-lg shadow-inner bg-blue-100"
-          ></canvas>
-        </div>
+          return (
+            // 游戏主容器，使用 Tailwind CSS 进行响应式布局和居中
+            <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 p-4 font-inter">
+              {/* 游戏内容卡片 */}
+              <div className="bg-white p-6 rounded-lg shadow-xl max-w-lg w-full text-center">
+                {/* 生日祝福标题 */}
+                <h1 className="text-4xl font-bold text-gray-800 mb-4 animate-bounce">
+                  生日快乐！🎉
+                </h1>
 
-        {/* 信息显示区域 */}
-        <p className={`text-xl font-semibold mb-6 ${isGameEnded ? 'text-green-600 animate-pulse' : 'text-gray-700'}`}>
-          {message}
-        </p>
+                {/* 蛋糕和蜡烛的 Canvas 容器 */}
+                <div className="relative w-full max-w-md mx-auto aspect-video mb-6">
+                  <canvas
+                    ref={canvasRef} // 将 ref 赋值给 canvas 元素
+                    className="w-full h-full border-4 border-yellow-400 rounded-lg shadow-inner bg-blue-100"
+                  ></canvas>
+                </div>
 
-        {/* 重置/重新开始游戏按钮 */}
-        <button
-          onClick={resetGame}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300"
-        >
-          {isGameEnded ? "再吹一次！" : "重新开始"}
-        </button>
-      </div>
+                {/* 信息显示区域 */}
+                <p className={`text-xl font-semibold mb-6 ${isGameEnded ? 'text-green-600 animate-pulse' : 'text-gray-700'}`}>
+                  {message}
+                </p>
 
-      {/* 条件渲染：“生日快乐”弹窗 */}
-      {isGameEnded && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-          <div className="bg-yellow-100 p-8 rounded-xl shadow-2xl text-center border-4 border-yellow-500 animate-fade-in-up">
-            <p className="text-5xl font-extrabold text-red-600 mb-6 drop-shadow-lg animate-bounce-slow">
-              生日快乐！
-            </p>
-            <p className="text-3xl font-semibold text-gray-800">
-              祝您60岁生日快乐，幸福安康！
-            </p>
-            <button
-              onClick={() => {
-                setIsGameEnded(false); // 隐藏弹窗
-                resetGame(); // 重置游戏，以便再玩一轮
-              }}
-              className="mt-8 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-green-300"
-            >
-              再吹一次！
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+                {/* 重置/重新开始游戏按钮 */}
+                <button
+                  onClick={resetGame}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300"
+                >
+                  {isGameEnded ? "再吹一次！" : "重新开始"}
+                </button>
+              </div>
 
-export default App;
+              {/* 条件渲染：“生日快乐”弹窗 */}
+              {isGameEnded && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+                  <div className="bg-yellow-100 p-8 rounded-xl shadow-2xl text-center border-4 border-yellow-500 animate-fade-in-up">
+                    <p className="text-5xl font-extrabold text-red-600 mb-6 drop-shadow-lg animate-bounce-slow">
+                      生日快乐！
+                    </p>
+                    <p className="text-3xl font-semibold text-gray-800">
+                      祝您60岁生日快乐，幸福安康！
+                    </p>
+                    <button
+                      onClick={() => {
+                        setIsGameEnded(false); // 隐藏弹窗
+                        resetGame(); // 重置游戏，以便再玩一轮
+                      }}
+                      className="mt-8 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-green-300"
+                    >
+                      再吹一次！
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        };
+
+        // 获取根 DOM 元素
+        const domContainer = document.querySelector('#root');
+        // 创建 React 根
+        const root = ReactDOM.createRoot(domContainer);
+        // 渲染 App 组件到根
+        root.render(React.createElement(App)); // 使用 React.createElement 来渲染 App 组件
+    </script>
+</body>
+</html>
