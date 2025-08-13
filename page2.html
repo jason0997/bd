@@ -70,11 +70,6 @@
         <p id="messageDisplay" class="text-xl font-semibold mb-6 text-gray-700">
             请尝试吹灭蜡烛！
         </p>
-
-        <!-- 重置/重新开始游戏按钮 -->
-        <button id="resetButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300">
-            重新开始
-        </button>
     </div>
 
     <!-- 条件渲染：“生日快乐”弹窗 -->
@@ -84,10 +79,10 @@
                 生日快乐！
             </p>
             <p class="text-3xl font-semibold text-gray-800">
-                祝您60岁生日快乐，幸福安康！
+                祝您生日快乐，幸福安康！
             </p>
             <button id="popupResetButton" class="mt-8 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-green-300">
-                再吹一次！
+                下一页
             </button>
         </div>
     </div>
@@ -97,7 +92,6 @@
         const canvas = document.getElementById('birthdayCanvas');
         const ctx = canvas.getContext('2d');
         const messageDisplay = document.getElementById('messageDisplay');
-        const resetButton = document.getElementById('resetButton');
         const birthdayPopup = document.getElementById('birthdayPopup');
         const popupResetButton = document.getElementById('popupResetButton');
 
@@ -113,8 +107,8 @@
         let micStream = null;
         let animationFrameId = null;
 
-        // 吹气阈值 (固定值) - 已调整灵敏度
-        const BLOW_THRESHOLD_FIXED = 50; // 从 60 调整到 50
+        // 吹气阈值 (固定值)
+        const BLOW_THRESHOLD_FIXED = 50; // 根据之前的请求，灵敏度调整为 50
         const SAMPLE_SIZE = 128;
 
         // 绘制蛋糕和蜡烛的常量颜色
@@ -331,8 +325,8 @@
 
         // -------------------- 游戏逻辑函数 --------------------
 
-        // 重置游戏到初始状态
-        function resetGame() {
+        // 这个函数用于重置游戏状态，但现在它不会被外部按钮直接调用
+        function resetGameInternal() {
             stopBlowing();
             candlesLit = true;
             messageDisplay.textContent = "请尝试吹灭蜡烛！";
@@ -360,9 +354,10 @@
             // 监听窗口尺寸变化，重新绘制 canvas
             window.addEventListener('resize', drawScene);
 
-            // 按钮事件监听
-            resetButton.addEventListener('click', resetGame);
-            popupResetButton.addEventListener('click', resetGame);
+            // “下一页”按钮事件监听 - 明确跳转到 index.html
+            popupResetButton.addEventListener('click', function() {
+                window.location.href = 'index.html'; // 明确跳转到当前目录下的 index.html
+            });
         };
     </script>
 </body>
