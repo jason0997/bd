@@ -1,0 +1,100 @@
+<div class="game-container">
+    <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-2 text-center">中文记忆配对游戏</h1>
+    <p class="text-gray-600 text-center mb-4">点击卡片，翻开字符，找到相同的两张卡片！</p>
+
+    <div id="game-grid" class="grid-container">
+        </div>
+    <button id="reset-button" class="button-primary">重新开始</button>
+
+    <script>
+        // Array of Chinese characters for the game. Each character will appear twice.
+        const characters = ['福', '寿', '安', '康', '万', '事', '如', '意'];
+        let gameCards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let lockBoard = false;
+        let totalPairs = characters.length;
+        const gameGrid = document.getElementById('game-grid');
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function initializeGame() {
+            const duplicatedCharacters = [...characters, ...characters];
+            const shuffledCharacters = shuffleArray(duplicatedCharacters);
+            gameGrid.innerHTML = '';
+            gameCards = [];
+            flippedCards = [];
+            matchedPairs = 0;
+            lockBoard = false;
+            
+            shuffledCharacters.forEach((char, index) => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.index = index;
+                card.dataset.char = char;
+
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front">${char}</div>
+                        <div class="card-back"></div>
+                    </div>
+                `;
+                card.addEventListener('click', () => flipCard(card));
+                gameGrid.appendChild(card);
+                gameCards.push(card);
+            });
+        }
+
+        function flipCard(card) {
+            if (lockBoard || card.classList.contains('flipped') || card.classList.contains('matched')) {
+                return;
+            }
+            card.classList.add('flipped');
+            flippedCards.push(card);
+            if (flippedCards.length === 2) {
+                lockBoard = true;
+                checkForMatch();
+            }
+        }
+
+        function checkForMatch() {
+            const [card1, card2] = flippedCards;
+            const isMatch = card1.dataset.char === card2.dataset.char;
+            if (isMatch) {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                matchedPairs++;
+                resetFlippedCards();
+                if (matchedPairs === totalPairs) {
+                    setTimeout(() => {
+                        const blessingMessage = '祝叔叔生日快乐🎂<br>身体健康💪<br>福寿安康🌿<br>万事如意🎉';
+                        window.showVictoryModal(blessingMessage);
+                    }, 500);
+                }
+            } else {
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    resetFlippedCards();
+                }, 1000);
+            }
+        }
+
+        function resetFlippedCards() {
+            flippedCards = [];
+            lockBoard = false;
+        }
+
+        // Add event listener for the reset button
+        document.getElementById('reset-button').addEventListener('click', initializeGame);
+
+        // 初始化游戏
+        initializeGame();
+    </script>
+</div>
