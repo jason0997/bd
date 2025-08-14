@@ -3,26 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>中文记忆配对游戏</title>
-    <!-- Tailwind CSS CDN for responsive and modern styling -->
+    <title>生日快乐</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        /* 这里放置所有页面的通用 CSS 样式 */
         body {
             font-family: 'Inter', 'Noto Sans SC', sans-serif;
-            background-color: #f0f4f8; /* Light background */
+            background-color: #f0f4f8;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh; /* Full viewport height */
+            min-height: 100vh;
             margin: 0;
-            padding: 1rem; /* Padding around the game */
+            padding: 1rem;
             box-sizing: border-box;
+
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #FFFFFF;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* 统一的按钮和模态框样式 */
+        .button-primary {
+            @apply px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200 ease-in-out;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 90vw;
+            width: 450px;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        .modal-message {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #334155;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
         }
         .game-container {
-            background-color: #ffffff; /* White card-like background */
-            border-radius: 1.5rem; /* More rounded corners */
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Soft shadow */
             padding: 1.5rem;
             max-width: 90vw; /* Adjusted max-width for 4x4 */
             width: 100%;
@@ -171,169 +225,263 @@
                 font-size: 2.2rem;
             }
         }
+ /* 定义动画效果，与游戏中的 Tailwind 类对应 */
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(-5%);
+                animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+            }
+            50% {
+                transform: translateY(0);
+                animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+            }
+        }
+        @keyframes bounce-slow {
+            0%, 100% {
+                transform: translateY(-5%);
+                animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+            }
+            50% {
+                transform: translateY(0);
+                animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+            }
+        }
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .animate-bounce {
+            animation: bounce 1s infinite;
+        }
+        .animate-bounce-slow {
+            animation: bounce-slow 2s infinite; /* 慢速弹跳 */
+        }
+        .animate-fade-in-up {
+            animation: fadeInScale 0.5s ease-out forwards; /* 弹窗淡入放大效果 */
+        }
+
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease-in-out;
+            opacity: 1;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        #loading-text {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #slideshow-container {
+            width: 100vw;
+            height: calc(100vh - 80px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            top: 0;
+            left: 0;
+            transition: opacity 1s ease-in-out;
+            background-color: transparent;
+            opacity: 0; /* 初始隐藏 */
+        }
+
+        .slideshow-image {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: opacity 0.8s ease-in-out;
+        }
+
+        .slideshow-image.active {
+            opacity: 1;
+            z-index: 2;
+        }
+
+        .slideshow-image.inactive {
+            opacity: 0;
+            z-index: 1;
+        }
+
+        #shou-character-grid-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: grid;
+            gap: 1px;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            background-color: transparent;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow: auto;
+        }
+
+        .grid-cell {
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+
+        .grid-cell img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+        }
+
+        #controls {
+            position: relative;
+            width: 100%;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-bottom: 20px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-2 text-center">中文记忆配对游戏</h1>
-        <p class="text-gray-600 text-center mb-4">点击卡片，翻开字符，找到相同的两张卡片！</p>
+    <audio id="bgm" src="./bgm.mp3" autoplay loop></audio>
 
-        <div id="game-grid" class="grid-container">
-            <!-- Cards will be dynamically inserted here by JavaScript -->
+    <div id="game-content-container">
         </div>
 
-        <div id="message-box" class="mt-4"></div>
-
-        <button id="reset-button" class="button-primary">重新开始</button>
-    </div>
-
-    <!-- Custom Modal Structure -->
     <div id="victory-modal" class="modal-overlay">
         <div class="modal-content">
-            <button class="modal-close-button" id="close-modal-button">&times;</button>
             <div class="modal-message"></div>
-            <button id="modal-reset-button" class="button-primary mt-6">下一页</button>
+            <button id="modal-next-button" class="button-primary mt-6">下一页</button>
         </div>
     </div>
-
+    
     <script>
-        // Array of Chinese characters for the game. Each character will appear twice.
-        const characters = ['福', '寿', '安', '康', '万', '事', '如', '意'];
-        let gameCards = []; // Stores the actual card elements and their properties
-        let flippedCards = []; // Stores the currently flipped cards (max 2)
-        let matchedPairs = 0; // Counts the number of matched pairs
-        let lockBoard = false; // Prevents further card flipping during a match check delay
-        let totalPairs = characters.length; // Total number of pairs in the game
+// 核心逻辑
+const gameContentContainer = document.getElementById('game-content-container');
+const victoryModal = document.getElementById('victory-modal');
+const modalMessage = victoryModal.querySelector('.modal-message');
+const modalNextButton = document.getElementById('modal-next-button');
+const bgm = document.getElementById('bgm');
+let currentPage = 'page1'; // 跟踪当前页面
 
-        const gameGrid = document.getElementById('game-grid');
-        const resetButton = document.getElementById('reset-button');
-        const messageBox = document.getElementById('message-box'); // Kept for consistency, though not used for win message now
+// 动态加载页面内容
+async function loadPage(pageName) {
+    try {
+        const response = await fetch(`${pageName}.html`);
+        const text = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        
+        const gameContainer = doc.body.querySelector('.game-container');
+        if (gameContainer) {
+            gameContentContainer.innerHTML = '';
+            gameContentContainer.appendChild(gameContainer);
 
-        // Modal elements
-        const victoryModal = document.getElementById('victory-modal');
-        const modalMessage = victoryModal.querySelector('.modal-message');
-        const closeModalButton = document.getElementById('close-modal-button');
-        const modalResetButton = document.getElementById('modal-reset-button');
-
-        // Fisher-Yates (Knuth) Shuffle algorithm
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
-            }
-            return array;
-        }
-
-        // Initializes the game board
-        function initializeGame() {
-            // Combine characters to create pairs
-            const duplicatedCharacters = [...characters, ...characters];
-            // Shuffle the characters for random placement
-            const shuffledCharacters = shuffleArray(duplicatedCharacters);
-
-            // Clear any existing cards from previous games
-            gameGrid.innerHTML = '';
-            gameCards = [];
-            flippedCards = [];
-            matchedPairs = 0;
-            lockBoard = false;
-            messageBox.textContent = ''; // Clear any lingering message from the old message box
-            hideVictoryModal(); // Ensure modal is hidden when starting a new game
-
-            // Dynamically create and append card elements to the grid
-            shuffledCharacters.forEach((char, index) => {
-                const card = document.createElement('div');
-                card.classList.add('card');
-                card.dataset.index = index; // Store original index for debugging, if needed
-                card.dataset.char = char; // Store the character value for matching
-
-                card.innerHTML = `
-                    <div class="card-inner">
-                        <div class="card-front">${char}</div>
-                        <div class="card-back"></div>
-                    </div>
-                `;
-                card.addEventListener('click', () => flipCard(card)); // Add click listener to each card
-                gameGrid.appendChild(card);
-                gameCards.push(card); // Keep a reference to the card elements
+            // 重新执行新加载内容中的脚本
+            const scripts = gameContainer.querySelectorAll('script');
+            scripts.forEach(script => {
+                const newScript = document.createElement('script');
+                newScript.textContent = script.textContent;
+                document.body.appendChild(newScript);
+                document.body.removeChild(newScript);
             });
-        }
-
-        // Handles the card flipping logic
-        function flipCard(card) {
-            // If board is locked or card is already flipped/matched, do nothing
-            if (lockBoard || card.classList.contains('flipped') || card.classList.contains('matched')) {
-                return;
+            
+            currentPage = pageName;
+            
+            // 新增：根据页面名称调用初始化函数
+            if (pageName === 'page1') {
+                window.initializeGame(); // 假设 page1 的初始化函数叫这个
+            } else if (pageName === 'page2') {
+                window.initPage2(); // 调用 page2 的初始化函数
+            } else if (pageName === 'page3') {
+                window.initPage3(); // 假设 page3 的初始化函数叫这个
             }
-
-            card.classList.add('flipped'); // Add 'flipped' class to show the front of the card
-            flippedCards.push(card); // Add the flipped card to our temporary array
-
-            if (flippedCards.length === 2) {
-                // If two cards are flipped, lock the board to prevent further clicks
-                lockBoard = true;
-                checkForMatch(); // Check if the two flipped cards are a match
-            }
+        } else {
+            console.error('无法找到 .game-container 元素');
         }
+    } catch (error) {
+        console.error('加载页面失败:', error);
+    }
+}
 
-        // Checks if the two flipped cards are a match
-        function checkForMatch() {
-            const [card1, card2] = flippedCards;
-            const isMatch = card1.dataset.char === card2.dataset.char; // Compare characters
 
-            if (isMatch) {
-                // If they match, mark them as 'matched' and disable further clicks
-                card1.classList.add('matched');
-                card2.classList.add('matched');
-                matchedPairs++; // Increment matched pairs count
-                resetFlippedCards(); // Reset the flipped cards array
-                if (matchedPairs === totalPairs) {
-                    // If all pairs are matched, the game is won
-                    setTimeout(() => {
-                        // Updated message with segments and emojis, separated by <br> for new lines
-                        const blessingMessage = '祝叔叔生日快乐🎂<br>身体健康💪<br>福寿安康🌿<br>万事如意🎉';
-                        showVictoryModal(blessingMessage); // Show custom modal
-                    }, 500); // Small delay for visual effect
-                }
-            } else {
-                // If they don't match, flip them back after a delay
-                setTimeout(() => {
-                    card1.classList.remove('flipped');
-                    card2.classList.remove('flipped');
-                    resetFlippedCards(); // Reset the flipped cards array and unlock the board
-                }, 1000); // 1-second delay before flipping back
-            }
-        }
+// 播放背景音乐
+function playAudio() {
+    bgm.play().catch(error => {
+        console.log('自动播放失败，需要用户交互', error);
+    });
+}
 
-        // Resets the temporary array of flipped cards and unlocks the board
-        function resetFlippedCards() {
-            flippedCards = [];
-            lockBoard = false; // Unlock the board after handling the flipped cards
-        }
+// 显示模态框
+function showVictoryModal(message) {
+    modalMessage.innerHTML = message;
+    victoryModal.classList.add('active');
+}
 
-        // Function to show the victory modal
-        function showVictoryModal(message) {
-            modalMessage.innerHTML = message; // Changed to innerHTML to interpret <br> tags
-            victoryModal.classList.add('active');
-        }
+// 隐藏模态框
+function hideVictoryModal() {
+    victoryModal.classList.remove('active');
+}
 
-        // Function to hide the victory modal
-        function hideVictoryModal() {
-            victoryModal.classList.remove('active');
-        }
+// 模态框“下一页”按钮点击事件
+modalNextButton.addEventListener('click', () => {
+    hideVictoryModal();
+    if (currentPage === 'page1') {
+        loadPage('page2');
+    } else if (currentPage === 'page2') {
+        loadPage('page3');
+    }
+});
 
-        // Event listener for the main reset button
-        resetButton.addEventListener('click', initializeGame);
+// 在用户首次点击页面任意位置时尝试播放音乐
+document.addEventListener('click', playAudio, { once: true });
 
-        // Event listeners for modal buttons
-        closeModalButton.addEventListener('click', hideVictoryModal);
-        modalResetButton.addEventListener('click', () => {
-            // Redirect to page2.html when "下一页" button is clicked
-            window.location.href = 'page2.html';
-        });
-
-        // Initialize the game when the page loads
-        window.onload = initializeGame;
+// 页面加载完成时，加载第一个页面
+window.onload = function() {
+    loadPage('page2');
+};
     </script>
 </body>
 </html>
