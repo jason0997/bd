@@ -11,47 +11,82 @@
             font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* 防止过渡期间出现滚动条 */
-            background-color: #FFFFFF; /* 背景改为白色 */
+            overflow: hidden;
+            background-color: #FFFFFF;
             display: flex;
-            flex-direction: column; /* 垂直布局，便于放置按钮 */
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 100vh; /* 全屏高度 */
+            min-height: 100vh;
+        }
+
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease-in-out;
+            opacity: 1;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        #loading-text {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         #slideshow-container {
             width: 100vw;
-            height: calc(100vh - 80px); /* 为按钮留出空间 */
+            height: calc(100vh - 80px);
             display: flex;
             justify-content: center;
             align-items: center;
-            position: relative; /* 相对定位，便于子元素绝对定位 */
+            position: relative;
             top: 0;
             left: 0;
-            transition: opacity 1s ease-in-out; /* 容器淡出效果 */
-            background-color: transparent; /* 改为透明，透出白色body背景 */
+            transition: opacity 1s ease-in-out;
+            background-color: transparent;
+            opacity: 0; /* 初始隐藏 */
         }
 
-        /* 用于交替显示的图片元素 */
         .slideshow-image {
-            position: absolute; /* 绝对定位，使两张图片可以重叠 */
+            position: absolute;
             width: 100%;
             height: 100%;
-            object-fit: contain; /* 确保图片完整显示，不裁剪 */
-            transition: opacity 0.8s ease-in-out; /* 图片淡入淡出过渡 */
+            object-fit: contain;
+            transition: opacity 0.8s ease-in-out;
         }
 
-        /* 当前显示图片的样式 */
         .slideshow-image.active {
-            opacity: 1; /* 完全不透明 */
-            z-index: 2; /* 确保在上方 */
+            opacity: 1;
+            z-index: 2;
         }
 
-        /* 准备显示或已隐藏图片的样式 */
         .slideshow-image.inactive {
-            opacity: 0; /* 完全透明 */
-            z-index: 1; /* 确保在下方 */
+            opacity: 0;
+            z-index: 1;
         }
 
         #shou-character-grid-container {
@@ -61,49 +96,54 @@
             width: 100vw;
             height: 100vh;
             display: grid;
-            gap: 1px; /* 图片单元格之间的细小间隙 */
-            opacity: 0; /* 初始隐藏，稍后整体淡入 */
-            transition: opacity 1s ease-in-out; /* 整体淡入效果 */
-            background-color: transparent; /* 背景改为透明 */
-            padding: 10px; /* 网格周围的内边距 */
-            box-sizing: border-box; /* 包含内边距在宽度/高度计算中 */
-            overflow: auto; /* 网格过大时允许滚动 */
+            gap: 1px;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            background-color: transparent;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow: auto;
         }
 
         .grid-cell {
-            width: 100%; /* 每个单元格占据其网格区域的全部宽度 */
-            height: 100%; /* 每个单元格占据其网格区域的全部高度 */
-            background-color: transparent; /* 空白单元格的背景改为透明 */
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
             display: flex;
             justify-content: center;
             align-items: center;
             overflow: hidden;
-            border-radius: 4px; /* 网格单元格圆角 */
+            border-radius: 4px;
         }
 
         .grid-cell img {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* 图片填充单元格区域 */
+            object-fit: cover;
             border-radius: 4px;
-            opacity: 0; /* 初始隐藏，通过JS和CSS逐个淡入 */
-            transition: opacity 0.3s ease-out; /* 单个图片淡入的过渡效果 */
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
         }
 
         #controls {
             position: relative;
             width: 100%;
-            height: 80px; /* 留出底部空间 */
+            height: 80px;
             display: flex;
             justify-content: center;
             align-items: center;
             padding-bottom: 20px;
             box-sizing: border-box;
-            z-index: 10; /* 确保按钮在幻灯片之上 */
+            z-index: 10;
         }
     </style>
 </head>
 <body>
+
+    <div id="loading-overlay">
+        <div id="loading-text">正在加载照片...</div>
+        <div class="spinner"></div>
+    </div>
 
     <div id="slideshow-container" class="rounded-lg shadow-xl">
         <img id="slideshow-image-1" class="slideshow-image rounded-lg" alt="Slideshow Image">
@@ -117,52 +157,47 @@
     </div>
 
     <div id="shou-character-grid-container" class="rounded-lg shadow-xl">
-        <!-- '寿'字图片网格将通过 JavaScript 动态生成 -->
-    </div>
+        </div>
 
     <script>
         const slideshowContainer = document.getElementById('slideshow-container');
         const shouGridContainer = document.getElementById('shou-character-grid-container');
         const jumpButton = document.getElementById('jump-button');
+        const loadingOverlay = document.getElementById('loading-overlay');
 
-        // 获取两张图片元素
         const slideshowImage1 = document.getElementById('slideshow-image-1');
         const slideshowImage2 = document.getElementById('slideshow-image-2');
 
-        // 跟踪当前活动的图片元素（正在显示或将要显示）和非活动的图片元素（背景或将要隐藏）
         let activeImageElement = slideshowImage1;
         let inactiveImageElement = slideshowImage2;
 
-        // Placeholder image URLs (请替换为你的18张实际图片链接)
         const imageUrls = [
             './img/1.jpeg',
             './img/2.jpeg',
             './img/3.jpeg',
-            'https://placehold.co/800x600/FF33A1/FFFFFF?text=Photo+4',
-            'https://placehold.co/800x600/A133FF/FFFFFF?text=Photo+5',
-            'https://placehold.co/800x600/FFDD33/FFFFFF?text=Photo+6',
-            'https://placehold.co/800x600/33FFF1/FFFFFF?text=Photo+7',
-            'https://placehold.co/800x600/F133FF/FFFFFF?text=Photo+8',
-            'https://placehold.co/800x600/33FF8D/FFFFFF?text=Photo+9',
-            'https://placehold.co/800x600/8D33FF/FFFFFF?text=Photo+10',
-            'https://placehold.co/800x600/FF3357/FFFFFF?text=Photo+11',
-            'https://placehold.co/800x600/57FF33/FFFFFF?text=Photo+12',
-            'https://placehold.co/800x600/33A1FF/FFFFFF?text=Photo+13',
-            'https://placehold.co/800x600/A1FF33/FFFFFF?text=Photo+14',
-            'https://placehold.co/800x600/FF8D33/FFFFFF?text=Photo+15',
-            'https://placehold.co/800x600/8DFF33/FFFFFF?text=Photo+16',
-            'https://placehold.co/800x600/3357A1/FFFFFF?text=Photo+17',
-            'https://placehold.co/800x600/A13357/FFFFFF?text=Photo+18'
+            './img/4.jpeg',
+            './img/5.jpeg',
+            './img/6.jpeg',
+            './img/7.jpeg',
+            './img/8.jpeg',
+            './img/9.jpeg',
+            './img/10.jpeg',
+            './img/11.jpeg',
+            './img/12.jpeg',
+            './img/13.jpeg',
+            './img/14.jpeg',
+            './img/15.jpeg',
+            './img/16.jpeg',
+            './img/17.jpeg',
+            './img/18.jpeg'
         ];
 
-        let currentImageIndex = 0; // 当前正在显示的图片索引
-        let slideshowCounter = 0; // 已经完成过渡的图片数量计数
-        const totalSlides = imageUrls.length; // 总图片数量
-        const displayDuration = 2000; // 每张照片停顿2秒
-        const fadeDuration = 800; // 渐变动画时间0.8秒 (与CSS同步)
+        let currentImageIndex = 0;
+        let slideshowCounter = 0;
+        const totalSlides = imageUrls.length;
+        const displayDuration = 2000;
+        const fadeDuration = 800;
 
-        // 像素坐标系，形成“寿”字
-        // '1' 表示该位置需要放置一张图片，'0' 表示为空
         const shouPixelMap = `
 00000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000
@@ -214,70 +249,47 @@
 00000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000`.trim();
 
-        // 将 shouRows, shouHeight, shouWidth 声明移到此处，使其成为全局变量
         const shouRows = shouPixelMap.split('\n').map(row => row.trim());
         const shouHeight = shouRows.length;
         const shouWidth = shouRows[0].length;
 
-        /**
-         * 显示下一张图片，并实现交叉渐变效果。
-         */
         function showNextImage() {
-            // 如果已经完成了所有图片的播放（即当前是第18次过渡，从第18张图片过渡走），
-            // 则停止幻灯片并过渡到“寿”字。
-            if (slideshowCounter === totalSlides - 1) { // 如果当前是第17次过渡完成，意味着第18张图片正在显示
-                clearInterval(slideshowInterval); // 停止自动播放
-                // 在第18张照片显示一段时间后，启动向“寿”字的过渡
+            if (slideshowCounter >= totalSlides - 1) {
+                clearInterval(slideshowInterval);
                 setTimeout(transitionToShouCharacter, displayDuration - fadeDuration);
-                return; // 结束函数，不再加载下一张图片
+                return;
             }
 
-            // 增加计数器，表示即将开始一次新的图片过渡
             slideshowCounter++;
-
-            // 计算下一张要显示的图片索引
             let nextImageToDisplayIndex = (currentImageIndex + 1) % totalSlides;
-
-            // 将新图片加载到目前处于非活动状态的图片元素中
             inactiveImageElement.src = imageUrls[nextImageToDisplayIndex];
 
-            // 触发交叉渐变动画：当前活动图片淡出，新图片淡入
             activeImageElement.classList.remove('active');
-            activeImageElement.classList.add('inactive'); // 旧图片开始淡出
+            activeImageElement.classList.add('inactive');
 
             inactiveImageElement.classList.remove('inactive');
-            inactiveImageElement.classList.add('active'); // 新图片开始淡入
+            inactiveImageElement.classList.add('active');
 
-            // 交换 activeImageElement 和 inactiveImageElement 的引用，为下一次循环做准备
             const temp = activeImageElement;
             activeImageElement = inactiveImageElement;
             inactiveImageElement = temp;
 
-            // 更新当前活跃图片的索引
             currentImageIndex = nextImageToDisplayIndex;
         }
 
-        /**
-         * 随机打乱数组的顺序（Fisher-Yates 洗牌算法）。
-         * @param {Array} array 待打乱的数组。
-         */
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]]; // 交换元素
+                [array[i], array[j]] = [array[j], array[i]];
             }
         }
 
-        /**
-         * 过渡到“寿”字网格显示。
-         */
         function transitionToShouCharacter() {
-            slideshowContainer.style.opacity = 0; // 淡出幻灯片容器
-            jumpButton.style.display = 'none'; // 隐藏跳转按钮
+            slideshowContainer.style.opacity = 0;
+            jumpButton.style.display = 'none';
 
-            // 根据屏幕尺寸计算每个单元格的大小，以确保“寿”字网格自适应屏幕并居中
             const viewportWidth = window.innerWidth;
-            const desiredGridWidth = viewportWidth * 0.95; // 网格占据视口宽度的95%
+            const desiredGridWidth = viewportWidth * 0.95;
             const cellSize = Math.floor(desiredGridWidth / shouWidth);
 
             shouGridContainer.style.gridTemplateColumns = `repeat(${shouWidth}, ${cellSize}px)`;
@@ -287,111 +299,132 @@
             shouGridContainer.style.position = 'absolute';
             shouGridContainer.style.left = '50%';
             shouGridContainer.style.top = '50%';
-            shouGridContainer.style.transform = 'translate(-50%, -50%)'; // 居中网格
+            shouGridContainer.style.transform = 'translate(-50%, -50%)';
 
-            const cellsToReveal = []; // 存储所有需要被显示的小图片元素及其位置信息
+            const cellsToReveal = [];
 
-            // 遍历“寿”字像素图，动态生成图片或空白单元格
             for (let r = 0; r < shouHeight; r++) {
                 for (let c = 0; c < shouWidth; c++) {
                     const cell = document.createElement('div');
                     cell.classList.add('grid-cell');
                     if (shouRows[r][c] === '1') {
-                        // 如果像素点为1，则随机选择一张照片填充
                         const randomImageIndex = Math.floor(Math.random() * imageUrls.length);
                         const img = document.createElement('img');
                         img.src = imageUrls[randomImageIndex];
                         img.alt = `寿字图片 ${r}-${c}`;
-                        // 注意：这里不再设置 img.style.opacity = 0; 因为CSS已经处理了初始隐藏
                         cell.appendChild(img);
-                        cellsToReveal.push({ img: img, row: r, col: c }); // 收集图片元素用于后续的逐个显示
+                        cellsToReveal.push({ img: img, row: r, col: c });
                     }
                     shouGridContainer.appendChild(cell);
                 }
             }
 
-            // 等待幻灯片容器完全淡出后，淡入“寿”字网格，然后开始逐个显示图片
             setTimeout(() => {
-                slideshowContainer.style.display = 'none'; // 完全隐藏幻灯片容器
-                shouGridContainer.style.opacity = 1; // 淡入“寿”字网格的整体容器
+                slideshowContainer.style.display = 'none';
+                shouGridContainer.style.opacity = 1;
 
-                // 开始逐个显示小图片
-                const revealStartDelay = 200; // 在网格容器整体淡入后，延迟多久开始显示小图片
-                const revealStaggerDelay = 15; // 每张小图片之间显示的延迟
+                const revealStartDelay = 200;
+                const revealStaggerDelay = 15;
 
-                // 随机打乱要显示的小图片顺序
                 shuffleArray(cellsToReveal);
 
                 cellsToReveal.forEach((cellData, index) => {
                     setTimeout(() => {
-                        cellData.img.style.opacity = 1; // 设置图片透明度为1，触发CSS的淡入过渡
+                        cellData.img.style.opacity = 1;
                     }, revealStartDelay + (index * revealStaggerDelay));
                 });
 
-            }, 1000); // 与 slideshowContainer 的 transition 时间一致
+            }, 1000);
         }
 
-        let slideshowInterval; // 自动播放的定时器
+        let slideshowInterval;
 
-        /**
-         * 直接设置幻灯片显示指定索引的图片，不影响计数器和定时器。
-         * 用于跳转功能。
-         * @param {number} index 要显示的图片索引。
-         */
         function setSlideshowImageDirectly(index) {
-            // 将当前活跃的图片设置为非活跃（淡出）
             activeImageElement.classList.remove('active');
             activeImageElement.classList.add('inactive');
 
-            // 将要显示的新图片加载到当前非活跃的元素中，并设置为活跃（淡入）
             inactiveImageElement.src = imageUrls[index];
             inactiveImageElement.classList.remove('inactive');
             inactiveImageElement.classList.add('active');
 
-            // 交换 activeImageElement 和 inactiveImageElement 的引用
             const temp = activeImageElement;
             activeImageElement = inactiveImageElement;
             inactiveImageElement = temp;
         }
 
-        // 页面加载完成时执行初始化
+        /**
+         * 预加载所有图片
+         * @param {string[]} urls - 要加载的图片URL数组
+         * @param {Function} callback - 所有图片加载完成后的回调函数
+         */
+        function preloadImages(urls, callback) {
+            let loadedCount = 0;
+            const total = urls.length;
+
+            if (total === 0) {
+                callback();
+                return;
+            }
+
+            urls.forEach(url => {
+                const img = new Image();
+                img.onload = () => {
+                    loadedCount++;
+                    if (loadedCount === total) {
+                        callback();
+                    }
+                };
+                img.onerror = () => {
+                    loadedCount++;
+                    console.error(`图片加载失败: ${url}`);
+                    if (loadedCount === total) {
+                        callback();
+                    }
+                };
+                img.src = url;
+            });
+        }
+
+        function startSlideshow() {
+            loadingOverlay.style.opacity = 0;
+            setTimeout(() => {
+                loadingOverlay.style.display = 'none';
+                slideshowContainer.style.opacity = 1; // 淡入幻灯片容器
+
+                activeImageElement.src = imageUrls[0];
+                activeImageElement.classList.add('active');
+
+                inactiveImageElement.classList.add('inactive');
+
+                currentImageIndex = 0;
+                slideshowCounter = 0;
+
+                slideshowInterval = setInterval(showNextImage, displayDuration);
+            }, 500); // 等待淡出动画完成
+        }
+
         window.onload = function() {
-            // 初始设置：第一张图片显示
-            activeImageElement.src = imageUrls[0]; // 加载第一张图片 (Photo 1)
-            activeImageElement.classList.add('active'); // 设置为活动状态
-
-            // 另一张图片元素初始化为非活动状态，准备加载下一张图片
-            inactiveImageElement.classList.add('inactive');
-
-            currentImageIndex = 0; // 当前显示的图片索引为0 (Photo 1)
-            slideshowCounter = 0; // 初始时，未完成任何图片间的过渡
-
-            // 启动自动播放，在 displayDuration 后第一次调用 showNextImage
-            slideshowInterval = setInterval(showNextImage, displayDuration);
+            preloadImages(imageUrls, startSlideshow);
         };
 
-        // 跳转按钮点击事件处理
         jumpButton.addEventListener('click', () => {
-            clearInterval(slideshowInterval); // 停止当前的自动播放
+            clearInterval(slideshowInterval);
 
-            const jumpToIndex = 16; // 目标是第17张照片，数组索引为16
+            const jumpToIndex = 16;
 
-            setSlideshowImageDirectly(jumpToIndex); // 立即显示第17张照片
-            currentImageIndex = jumpToIndex; // 更新当前显示的图片索引
-            slideshowCounter = jumpToIndex; // 更新计数器，表示已经“完成”了到这张图片的过渡
+            setSlideshowImageDirectly(jumpToIndex);
+            currentImageIndex = jumpToIndex;
+            slideshowCounter = jumpToIndex;
 
-            // 如果跳转到的就是第18张照片（索引为17），则直接启动向“寿”字的过渡
             if (currentImageIndex === totalSlides - 1) {
-                 setTimeout(transitionToShouCharacter, displayDuration - fadeDuration);
+                setTimeout(transitionToShouCharacter, displayDuration - fadeDuration);
             } else {
-                // 否则，从当前跳转的图片开始，继续自动播放
                 slideshowInterval = setInterval(showNextImage, displayDuration);
             }
         });
 
-        // 调整窗口大小时重新计算网格尺寸
         window.addEventListener('resize', () => {
-            if (shouGridContainer.style.opacity === '1') { // 只有在“寿”字显示时才调整
+            if (shouGridContainer.style.opacity === '1') {
                 const viewportWidth = window.innerWidth;
                 const desiredGridWidth = viewportWidth * 0.95;
                 const cellSize = Math.floor(desiredGridWidth / shouWidth);
