@@ -10,24 +10,16 @@
         /* 这里放置所有页面的通用 CSS 样式 */
         body {
             font-family: 'Inter', 'Noto Sans SC', sans-serif;
-            background-color: #f0f4f8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 1rem;
-            box-sizing: border-box;
-
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
             background-color: #FFD9E6;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            box-sizing: border-box;
         }
 
         /* 统一的按钮和模态框样式 */
@@ -388,7 +380,7 @@
     <audio id="bgm" src="./bgm.mp3" autoplay loop></audio>
 
     <div id="game-content-container">
-        </div>
+    </div>
 
     <div id="victory-modal" class="modal-overlay">
         <div class="modal-content">
@@ -432,11 +424,18 @@ async function loadPage(pageName) {
             
             // 新增：根据页面名称调用初始化函数
             if (pageName === 'page1') {
-                window.initializeGame(); // 假设 page1 的初始化函数叫这个
+                // 确保 window.initializeGame 已经被 page1 的脚本定义
+                if (window.initializeGame) {
+                    window.initializeGame();
+                }
             } else if (pageName === 'page2') {
-                window.initPage2(); // 调用 page2 的初始化函数
+                if (window.initPage2) {
+                    window.initPage2();
+                }
             } else if (pageName === 'page3') {
-                window.initPage3(); // 假设 page3 的初始化函数叫这个
+                if (window.initPage3) {
+                    window.initPage3();
+                }
             }
         } else {
             console.error('无法找到 .game-container 元素');
@@ -480,6 +479,10 @@ document.addEventListener('click', playAudio, { once: true });
 
 // 页面加载完成时，加载第一个页面
 window.onload = function() {
+    // 将全局函数暴露，供 page1.html 中的脚本调用
+    window.showVictoryModal = showVictoryModal;
+    window.hideVictoryModal = hideVictoryModal;
+    
     loadPage('page1');
 };
     </script>
