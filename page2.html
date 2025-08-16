@@ -15,7 +15,6 @@
         const canvas = document.getElementById('birthdayCanvas');
         const ctx = canvas.getContext('2d');
         const messageDisplay = document.getElementById('messageDisplay');
-const bgm = window.parent.document.getElementById('bgm');
 
         let candlesLit = true;
         let isMicActive = false;
@@ -25,6 +24,7 @@ const bgm = window.parent.document.getElementById('bgm');
         let analyser = null;
         let micStream = null;
         let animationFrameId = null;
+        let bgm=null;
 
         const BLOW_THRESHOLD_FIXED = 50;
         const SAMPLE_SIZE = 128;
@@ -228,6 +228,7 @@ const bgm = window.parent.document.getElementById('bgm');
 
         // 修改此处：将初始化逻辑封装到新函数中
         window.initPage2 = function() {
+            bgm = window.parent.document.getElementById('bgm');
             drawScene();
             startBlowing();
             window.addEventListener('resize', drawScene);
