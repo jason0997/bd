@@ -12,20 +12,7 @@
     </div>
 
     <script>
-        const canvas = document.getElementById('birthdayCanvas');
-        const ctx = canvas.getContext('2d');
-        const messageDisplay = document.getElementById('messageDisplay');
-
-        let candlesLit = true;
-        let isMicActive = false;
-        let isGameEnded = false;
-        let micAccessGranted = false;
-        let audioContext = null;
-        let analyser = null;
-        let micStream = null;
-        let animationFrameId = null;
-        let bgm=null;
-
+        // Game state variables and constants
         const BLOW_THRESHOLD_FIXED = 50;
         const SAMPLE_SIZE = 128;
 
@@ -40,82 +27,95 @@
         const WICK_COLOR = '#8B4513';
         const TABLE_COLOR = '#8B4513';
 
-        function drawCake(ctx, width, height) {
-            ctx.clearRect(0, 0, width, height);
-            const cakeHeight = height * 0.4;
-            const cakeWidth = width * 0.7;
-            const cakeX = (width - cakeWidth) / 2;
-            const cakeY = height - cakeHeight - 20;
+        // Variables for audio processing and game state
+        let candlesLit = true;
+        let isMicActive = false;
+        let isGameEnded = false;
+        let micAccessGranted = false;
+        let audioContext = null;
+        let analyser = null;
+        let micStream = null;
+        let animationFrameId = null;
+
+        let canvas, ctx, messageDisplay, bgm;
+
+        // Function to draw the cake
+        function drawCake() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const cakeHeight = canvas.height * 0.4;
+            const cakeWidth = canvas.width * 0.7;
+            const cakeX = (canvas.width - cakeWidth) / 2;
+            const cakeY = canvas.height - cakeHeight - 20;
+
+            // Draw table
             ctx.fillStyle = TABLE_COLOR;
-            ctx.fillRect(0, height - 50, width, 50);
-            const layerHeight = cakeHeight / 2;
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+
+            // Draw lower cake layer
+            const lowerLayerHeight = cakeHeight / 2;
             ctx.fillStyle = CAKE_BODY_COLOR;
             ctx.beginPath();
-            ctx.ellipse(cakeX + cakeWidth / 2, cakeY + cakeHeight / 2 + layerHeight / 2, cakeWidth / 2, layerHeight / 2, 0, Math.PI, 2 * Math.PI, false);
-            ctx.rect(cakeX, cakeY + cakeHeight / 2, cakeWidth, layerHeight);
+            ctx.ellipse(cakeX + cakeWidth / 2, cakeY + cakeHeight / 2 + lowerLayerHeight / 2, cakeWidth / 2, lowerLayerHeight / 2, 0, Math.PI, 2 * Math.PI, false);
+            ctx.rect(cakeX, cakeY + cakeHeight / 2, cakeWidth, lowerLayerHeight);
             ctx.closePath();
             ctx.fill();
+            
             ctx.fillStyle = ICING_COLOR_MIDDLE;
             ctx.beginPath();
-            ctx.ellipse(cakeX + cakeWidth / 2, cakeY + cakeHeight / 2, cakeWidth / 2, layerHeight * 0.2, 0, 0, 2 * Math.PI);
+            ctx.ellipse(cakeX + cakeWidth / 2, cakeY + cakeHeight / 2, cakeWidth / 2, lowerLayerHeight * 0.2, 0, 0, 2 * Math.PI);
             ctx.fill();
+
+            // Draw upper cake layer
             const topCakeWidth = cakeWidth * 0.8;
             const topCakeX = cakeX + (cakeWidth - topCakeWidth) / 2;
             const topCakeY = cakeY;
             ctx.fillStyle = CAKE_BODY_COLOR;
             ctx.beginPath();
-            ctx.ellipse(topCakeX + topCakeWidth / 2, topCakeY + layerHeight / 2, topCakeWidth / 2, layerHeight / 2, 0, Math.PI, 2 * Math.PI, false);
-            ctx.rect(topCakeX, topCakeY, topCakeWidth, layerHeight);
+            ctx.ellipse(topCakeX + topCakeWidth / 2, topCakeY + lowerLayerHeight / 2, topCakeWidth / 2, lowerLayerHeight / 2, 0, Math.PI, 2 * Math.PI, false);
+            ctx.rect(topCakeX, topCakeY, topCakeWidth, lowerLayerHeight);
             ctx.closePath();
             ctx.fill();
+
             ctx.fillStyle = ICING_COLOR_TOP;
             ctx.beginPath();
-            ctx.ellipse(topCakeX + topCakeWidth / 2, topCakeY + layerHeight / 2, topCakeWidth / 2, layerHeight * 0.2, 0, 0, 2 * Math.PI);
+            ctx.ellipse(topCakeX + topCakeWidth / 2, topCakeY + lowerLayerHeight / 2, topCakeWidth / 2, lowerLayerHeight * 0.2, 0, 0, 2 * Math.PI);
             ctx.fill();
+
+            // Draw shadows and details
             ctx.fillStyle = CAKE_SHADOW_COLOR;
             ctx.beginPath();
             ctx.ellipse(cakeX + cakeWidth / 2, cakeY + cakeHeight + 5, cakeWidth / 2, cakeHeight * 0.05, 0, 0, 2 * Math.PI);
             ctx.fill();
-            ctx.strokeStyle = ICING_COLOR_TOP;
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            for (let i = 0; i <= 20; i++) {
-                const x = topCakeX + (topCakeWidth / 20) * i;
-                const y = topCakeY + layerHeight / 2 + (i % 2 === 0 ? -5 : 5);
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.stroke();
-            ctx.beginPath();
-            for (let i = 0; i <= 20; i++) {
-                const x = cakeX + (cakeWidth / 20) * i;
-                const y = cakeY + cakeHeight / 2 + (i % 2 === 0 ? -5 : 5);
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.stroke();
         }
 
-        function drawCandles(ctx, lit, width, height) {
-            const cakeWidth = width * 0.7;
+        // Function to draw the candles
+        function drawCandles() {
+            const cakeWidth = canvas.width * 0.7;
             const topCakeWidth = cakeWidth * 0.8;
-            const topCakeX = (width - topCakeWidth) / 2;
-            const topCakeY = height * 0.6 - 20;
+            const topCakeX = (canvas.width - topCakeWidth) / 2;
+            const topCakeY = canvas.height * 0.6 - 20;
             const candleCount = 6;
             const candleWidth = topCakeWidth / (candleCount * 1.5);
-            const candleHeight = height * 0.18;
+            const candleHeight = canvas.height * 0.18;
+            
             for (let i = 0; i < candleCount; i++) {
                 const candleX = topCakeX + (i + 0.5) * (topCakeWidth / candleCount) - candleWidth / 2;
                 const candleY = topCakeY - candleHeight + 10;
+                
+                // Draw candle body
                 ctx.fillStyle = CANDLE_COLOR_BASE;
                 ctx.fillRect(candleX, candleY, candleWidth, candleHeight);
                 ctx.fillStyle = CANDLE_COLOR_STRIPE;
                 for (let j = 0; j < 3; j++) {
                     ctx.fillRect(candleX, candleY + candleHeight / 4 + j * (candleHeight / 4), candleWidth, candleHeight / 10);
                 }
+                
+                // Draw wick
                 ctx.fillStyle = WICK_COLOR;
                 ctx.fillRect(candleX + candleWidth / 2 - 1, candleY - 5, 2, 8);
-                if (lit) {
+                
+                // Draw flame if candles are lit
+                if (candlesLit) {
                     ctx.beginPath();
                     ctx.ellipse(candleX + candleWidth / 2, candleY - 12, candleWidth / 2.5, candleWidth * 0.7, 0, 0, 2 * Math.PI);
                     ctx.fillStyle = FLAME_COLOR_OUTER;
@@ -128,16 +128,18 @@
             }
         }
 
+        // Main function to draw the entire scene
         function drawScene() {
             const dpr = window.devicePixelRatio || 1;
             const rect = canvas.getBoundingClientRect();
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
             ctx.scale(dpr, dpr);
-            drawCake(ctx, rect.width, rect.height);
-            drawCandles(ctx, candlesLit, rect.width, rect.height);
+            drawCake();
+            drawCandles();
         }
 
+        // Stops the microphone stream and audio context
         function stopBlowing() {
             if (micStream) {
                 micStream.getTracks().forEach(track => track.stop());
@@ -156,79 +158,85 @@
             isMicActive = false;
         }
 
+        // Analyzes the microphone audio for "blowing"
         function analyzeAudio() {
             if (!analyser || !candlesLit || isGameEnded || !micAccessGranted) {
                 animationFrameId = null;
                 return;
             }
-            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            const dataArray = new Uint8Array(analyser.frequencyBinBinCount);
             analyser.getByteFrequencyData(dataArray);
             let sum = 0;
             for (let i = 0; i < SAMPLE_SIZE; i++) {
                 sum += dataArray[i];
             }
             const average = sum / SAMPLE_SIZE;
-            if (average > 30) {
-                bgm.volume = 1.0;
+            if (average > BLOW_THRESHOLD_FIXED) {
                 candlesLit = false;
                 messageDisplay.textContent = "生日快乐！";
                 messageDisplay.classList.add('text-green-600', 'animate-pulse');
                 messageDisplay.classList.remove('text-gray-700');
                 isGameEnded = true;
                 stopBlowing();
-                window.showVictoryModal('生日快乐！<br>祝您生日快乐，幸福安康！');
+                // Restore BGM volume
+                if (bgm) {
+                    bgm.volume = 1.0;
+                }
+                // Call the function from the parent window to show the modal
+                if (window.showVictoryModal) {
+                    window.showVictoryModal('生日快乐！<br>祝您生日快乐，幸福安康！');
+                }
             } else {
                 animationFrameId = requestAnimationFrame(analyzeAudio);
             }
             drawScene();
         }
 
+        // Starts the microphone access and audio analysis
         async function startBlowing() {
             if (isMicActive || (micAccessGranted && !isGameEnded)) return;
             try {
-                                if(bgm) {
-                    bgm.volume =0.2;
+                // Dim BGM volume before starting mic access
+                if (bgm) {
+                    bgm.volume = 0.2;
                 }
+                
                 micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 analyser = audioContext.createAnalyser();
                 analyser.fftSize = 256;
                 const source = audioContext.createMediaStreamSource(micStream);
                 source.connect(analyser);
+
                 isMicActive = true;
                 micAccessGranted = true;
                 messageDisplay.textContent = "请尝试吹灭蜡烛！";
                 messageDisplay.classList.remove('text-green-600', 'animate-pulse');
                 messageDisplay.classList.add('text-gray-700');
+                
                 animationFrameId = requestAnimationFrame(analyzeAudio);
             } catch (err) {
                 console.error("访问麦克风错误:", err);
                 messageDisplay.textContent = "无法访问麦克风。请授予权限以吹灭蜡烛。";
                 isMicActive = false;
                 micAccessGranted = false;
+                // Restore BGM volume on error
+                if (bgm) {
+                    bgm.volume = 1.0;
+                }
             }
             drawScene();
         }
 
-        function resetGameInternal() {
-            stopBlowing();
-            candlesLit = true;
-            messageDisplay.textContent = "请尝试吹灭蜡烛！";
-            messageDisplay.classList.remove('text-green-600', 'animate-pulse');
-            messageDisplay.classList.add('text-gray-700');
-            isGameEnded = false;
-            if (!micAccessGranted) {
-                startBlowing();
-            } else {
-                isMicActive = true;
-                animationFrameId = requestAnimationFrame(analyzeAudio);
-            }
-            drawScene();
-        }
-
-        // 修改此处：将初始化逻辑封装到新函数中
+        // Global function to initialize this page, called from index.html
         window.initPage2 = function() {
+            // Get DOM elements here to ensure they exist after content is loaded
+            canvas = document.getElementById('birthdayCanvas');
+            ctx = canvas.getContext('2d');
+            messageDisplay = document.getElementById('messageDisplay');
+            // Safely get the BGM element from the parent window
             bgm = window.parent.document.getElementById('bgm');
+
             drawScene();
             startBlowing();
             window.addEventListener('resize', drawScene);
