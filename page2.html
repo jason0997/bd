@@ -15,6 +15,7 @@
         const canvas = document.getElementById('birthdayCanvas');
         const ctx = canvas.getContext('2d');
         const messageDisplay = document.getElementById('messageDisplay');
+const bgm = window.parent.document.getElementById('bgm');
 
         let candlesLit = true;
         let isMicActive = false;
@@ -167,7 +168,8 @@
                 sum += dataArray[i];
             }
             const average = sum / SAMPLE_SIZE;
-            if (average > BLOW_THRESHOLD_FIXED) {
+            if (average > 30) {
+                bgm.volume = 1.0;
                 candlesLit = false;
                 messageDisplay.textContent = "生日快乐！";
                 messageDisplay.classList.add('text-green-600', 'animate-pulse');
@@ -184,6 +186,9 @@
         async function startBlowing() {
             if (isMicActive || (micAccessGranted && !isGameEnded)) return;
             try {
+                                if(bgm) {
+                    bgm.volume =0.2;
+                }
                 micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 analyser = audioContext.createAnalyser();
