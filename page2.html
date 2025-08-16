@@ -55,30 +55,32 @@
             const lowerLayerHeight = cakeHeight / 2;
             ctx.fillStyle = CAKE_BODY_COLOR;
             ctx.beginPath();
-            ctx.ellipse(cakeX + cakeWidth / 2, cakeY + cakeHeight / 2 + lowerLayerHeight / 2, cakeWidth / 2, lowerLayerHeight / 2, 0, Math.PI, 2 * Math.PI, false);
-            ctx.rect(cakeX, cakeY + cakeHeight / 2, cakeWidth, lowerLayerHeight);
+            ctx.ellipse(cakeX + cakeWidth / 2, cakeY + lowerLayerHeight, cakeWidth / 2, lowerLayerHeight * 0.25, 0, 0, 2 * Math.PI, false);
+            ctx.fill();
+            ctx.rect(cakeX, cakeY + lowerLayerHeight, cakeWidth, lowerLayerHeight * 0.8);
             ctx.closePath();
             ctx.fill();
-            
+
             ctx.fillStyle = ICING_COLOR_MIDDLE;
             ctx.beginPath();
-            ctx.ellipse(cakeX + cakeWidth / 2, cakeY + cakeHeight / 2, cakeWidth / 2, lowerLayerHeight * 0.2, 0, 0, 2 * Math.PI);
+            ctx.ellipse(cakeX + cakeWidth / 2, cakeY + lowerLayerHeight, cakeWidth / 2, lowerLayerHeight * 0.25, 0, 0, 2 * Math.PI);
             ctx.fill();
 
             // Draw upper cake layer
             const topCakeWidth = cakeWidth * 0.8;
             const topCakeX = cakeX + (cakeWidth - topCakeWidth) / 2;
-            const topCakeY = cakeY;
+            const topCakeY = cakeY - lowerLayerHeight * 0.5; // Adjusted to be above the lower layer
             ctx.fillStyle = CAKE_BODY_COLOR;
             ctx.beginPath();
-            ctx.ellipse(topCakeX + topCakeWidth / 2, topCakeY + lowerLayerHeight / 2, topCakeWidth / 2, lowerLayerHeight / 2, 0, Math.PI, 2 * Math.PI, false);
-            ctx.rect(topCakeX, topCakeY, topCakeWidth, lowerLayerHeight);
+            ctx.ellipse(topCakeX + topCakeWidth / 2, topCakeY + lowerLayerHeight * 0.5, topCakeWidth / 2, lowerLayerHeight * 0.25, 0, 0, 2 * Math.PI, false);
+            ctx.fill();
+            ctx.rect(topCakeX, topCakeY + lowerLayerHeight * 0.5, topCakeWidth, lowerLayerHeight * 0.5);
             ctx.closePath();
             ctx.fill();
 
             ctx.fillStyle = ICING_COLOR_TOP;
             ctx.beginPath();
-            ctx.ellipse(topCakeX + topCakeWidth / 2, topCakeY + lowerLayerHeight / 2, topCakeWidth / 2, lowerLayerHeight * 0.2, 0, 0, 2 * Math.PI);
+            ctx.ellipse(topCakeX + topCakeWidth / 2, topCakeY + lowerLayerHeight * 0.5, topCakeWidth / 2, lowerLayerHeight * 0.25, 0, 0, 2 * Math.PI);
             ctx.fill();
 
             // Draw shadows and details
