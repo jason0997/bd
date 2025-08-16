@@ -160,17 +160,23 @@
 
         // Analyzes the microphone audio for "blowing"
         function analyzeAudio() {
-            if (!analyser || !candlesLit || isGameEnded || !micAccessGranted) {
-                animationFrameId = null;
+            if (!analyser || !candlesLit || isGameEnded) {
+                // 如果游戏结束或蜡烛已熄灭，停止分析循环
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
                 return;
             }
-            const dataArray = new Uint8Array(analyser.frequencyBinBinCount);
+            
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
             analyser.getByteFrequencyData(dataArray);
             let sum = 0;
             for (let i = 0; i < SAMPLE_SIZE; i++) {
                 sum += dataArray[i];
             }
             const average = sum / SAMPLE_SIZE;
+            
             if (average > BLOW_THRESHOLD_FIXED) {
                 candlesLit = false;
                 messageDisplay.textContent = "生日快乐！";
@@ -178,10 +184,12 @@
                 messageDisplay.classList.remove('text-gray-700');
                 isGameEnded = true;
                 stopBlowing();
+                
                 // Restore BGM volume
                 if (bgm) {
                     bgm.volume = 1.0;
                 }
+                
                 // Call the function from the parent window to show the modal
                 if (window.showVictoryModal) {
                     window.showVictoryModal('生日快乐！<br>祝您生日快乐，幸福安康！');
@@ -194,7 +202,8 @@
 
         // Starts the microphone access and audio analysis
         async function startBlowing() {
-            if (isMicActive || (micAccessGranted && !isGameEnded)) return;
+            if (isMicActive || isGameEnded) return;
+
             try {
                 // Dim BGM volume before starting mic access
                 if (bgm) {
@@ -237,8 +246,16 @@
             // Safely get the BGM element from the parent window
             bgm = window.parent.document.getElementById('bgm');
 
+            // Set initial state
+            candlesLit = true;
+            isMicActive = false;
+            isGameEnded = false;
+            
             drawScene();
             startBlowing();
+            
+            // 移除旧的事件监听器，避免重复绑定
+            window.removeEventListener('resize', drawScene);
             window.addEventListener('resize', drawScene);
         };
     </script>
