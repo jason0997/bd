@@ -16,22 +16,19 @@
         const BLOW_THRESHOLD_FIXED = 50;
         const SAMPLE_SIZE = 128;
 
-        const CAKE_BODY_COLOR = '#F5B041';
-        const CAKE_SHADOW_COLOR = '#C38B27';
-        const ICING_COLOR_TOP = '#FFD700';
-        const ICING_COLOR_MIDDLE = '#FFC300';
-        const CANDLE_COLOR_BASE = '#FF6F61';
-        const CANDLE_COLOR_STRIPE = '#FFC0CB';
-        const FLAME_COLOR_INNER = '#FFFF00';
-        const FLAME_COLOR_OUTER = '#FF8C00';
-        const WICK_COLOR = '#8B4513';
-        const TABLE_COLOR = '#8B4513';
+        // Color Palette
+        const PLATE_COLOR = '#FFD700'; // Yellow
+        const CAKE_BODY_COLOR = '#FADADD'; // Light Pink
+        const CAKE_TOP_COLOR = '#FFC0CB';   // Pink
+        const CANDLE_COLOR = '#FF6F61';   // Coral Red
+        const WICK_COLOR = '#5D4037';      // Dark Brown
+        const FLAME_OUTER_COLOR = '#FFAB00'; // Orange
+        const FLAME_INNER_COLOR = '#FFD600'; // Bright Yellow
 
         // Variables for audio processing and game state
         let candlesLit = true;
         let isMicActive = false;
         let isGameEnded = false;
-        let micAccessGranted = false;
         let audioContext = null;
         let analyser = null;
         let micStream = null;
@@ -39,107 +36,105 @@
 
         let canvas, ctx, messageDisplay;
 
-        // Function to draw the cake
-        function drawCake() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const cakeHeight = canvas.height * 0.4;
-            const cakeWidth = canvas.width * 0.7;
-            const cakeX = (canvas.width - cakeWidth) / 2;
-            const cakeY = canvas.height - cakeHeight - 20;
-
-            // Draw table
-            ctx.fillStyle = TABLE_COLOR;
-            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
-
-            // Draw lower cake layer
-            const lowerLayerHeight = cakeHeight / 2;
-            ctx.fillStyle = CAKE_BODY_COLOR;
-            ctx.beginPath();
-            ctx.ellipse(cakeX + cakeWidth / 2, cakeY + lowerLayerHeight, cakeWidth / 2, lowerLayerHeight * 0.25, 0, 0, 2 * Math.PI, false);
-            ctx.fill();
-            ctx.rect(cakeX, cakeY + lowerLayerHeight, cakeWidth, lowerLayerHeight * 0.8);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.fillStyle = ICING_COLOR_MIDDLE;
-            ctx.beginPath();
-            ctx.ellipse(cakeX + cakeWidth / 2, cakeY + lowerLayerHeight, cakeWidth / 2, lowerLayerHeight * 0.25, 0, 0, 2 * Math.PI);
-            ctx.fill();
-
-            // Draw upper cake layer
-            const topCakeWidth = cakeWidth * 0.8;
-            const topCakeX = cakeX + (cakeWidth - topCakeWidth) / 2;
-            const topCakeY = cakeY - lowerLayerHeight * 0.5; // Adjusted to be above the lower layer
-            ctx.fillStyle = CAKE_BODY_COLOR;
-            ctx.beginPath();
-            ctx.ellipse(topCakeX + topCakeWidth / 2, topCakeY + lowerLayerHeight * 0.5, topCakeWidth / 2, lowerLayerHeight * 0.25, 0, 0, 2 * Math.PI, false);
-            ctx.fill();
-            ctx.rect(topCakeX, topCakeY + lowerLayerHeight * 0.5, topCakeWidth, lowerLayerHeight * 0.5);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.fillStyle = ICING_COLOR_TOP;
-            ctx.beginPath();
-            ctx.ellipse(topCakeX + topCakeWidth / 2, topCakeY + lowerLayerHeight * 0.5, topCakeWidth / 2, lowerLayerHeight * 0.25, 0, 0, 2 * Math.PI);
-            ctx.fill();
-
-            // Draw shadows and details
-            ctx.fillStyle = CAKE_SHADOW_COLOR;
-            ctx.beginPath();
-            ctx.ellipse(cakeX + cakeWidth / 2, cakeY + cakeHeight + 5, cakeWidth / 2, cakeHeight * 0.05, 0, 0, 2 * Math.PI);
-            ctx.fill();
-        }
-
-        // Function to draw the candles
-        function drawCandles() {
-            const cakeWidth = canvas.width * 0.7;
-            const topCakeWidth = cakeWidth * 0.8;
-            const topCakeX = (canvas.width - topCakeWidth) / 2;
-            const topCakeY = canvas.height * 0.6 - 20;
-            const candleCount = 6;
-            const candleWidth = topCakeWidth / (candleCount * 1.5);
-            const candleHeight = canvas.height * 0.18;
-            
-            for (let i = 0; i < candleCount; i++) {
-                const candleX = topCakeX + (i + 0.5) * (topCakeWidth / candleCount) - candleWidth / 2;
-                const candleY = topCakeY - candleHeight + 10;
-                
-                // Draw candle body
-                ctx.fillStyle = CANDLE_COLOR_BASE;
-                ctx.fillRect(candleX, candleY, candleWidth, candleHeight);
-                ctx.fillStyle = CANDLE_COLOR_STRIPE;
-                for (let j = 0; j < 3; j++) {
-                    ctx.fillRect(candleX, candleY + candleHeight / 4 + j * (candleHeight / 4), candleWidth, candleHeight / 10);
-                }
-                
-                // Draw wick
-                ctx.fillStyle = WICK_COLOR;
-                ctx.fillRect(candleX + candleWidth / 2 - 1, candleY - 5, 2, 8);
-                
-                // Draw flame if candles are lit
-                if (candlesLit) {
-                    ctx.beginPath();
-                    ctx.ellipse(candleX + candleWidth / 2, candleY - 12, candleWidth / 2.5, candleWidth * 0.7, 0, 0, 2 * Math.PI);
-                    ctx.fillStyle = FLAME_COLOR_OUTER;
-                    ctx.fill();
-                    ctx.beginPath();
-                    ctx.ellipse(candleX + candleWidth / 2, candleY - 12, candleWidth / 4, candleWidth * 0.4, 0, 0, 2 * Math.PI);
-                    ctx.fillStyle = FLAME_COLOR_INNER;
-                    ctx.fill();
-                }
-            }
-        }
-
-        // Main function to draw the entire scene
+        // --- NEW & IMPROVED DRAWING FUNCTION ---
         function drawScene() {
+            // Setup canvas for high-DPI screens
             const dpr = window.devicePixelRatio || 1;
             const rect = canvas.getBoundingClientRect();
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
             ctx.scale(dpr, dpr);
-            drawCake();
-            drawCandles();
+
+            const canvasWidth = rect.width;
+            const canvasHeight = rect.height;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+            // Define central drawing coordinates
+            const centerX = canvasWidth / 2;
+            const baseY = canvasHeight * 0.85;
+
+            // --- 1. Draw the Plate ---
+            const plateWidth = canvasWidth * 0.8;
+            const plateHeight = canvasHeight * 0.1;
+            ctx.fillStyle = PLATE_COLOR;
+            ctx.beginPath();
+            ctx.ellipse(centerX, baseY, plateWidth / 2, plateHeight / 2, 0, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // --- 2. Draw the Bottom Cake Layer ---
+            const bottomLayerWidth = plateWidth * 0.8;
+            const bottomLayerHeight = canvasHeight * 0.2;
+            const bottomLayerY = baseY - bottomLayerHeight;
+            // Body
+            ctx.fillStyle = CAKE_BODY_COLOR;
+            ctx.fillRect(centerX - bottomLayerWidth / 2, bottomLayerY, bottomLayerWidth, bottomLayerHeight);
+            // Top Icing (for 3D effect)
+            ctx.fillStyle = CAKE_TOP_COLOR;
+            ctx.beginPath();
+            ctx.ellipse(centerX, bottomLayerY, bottomLayerWidth / 2, plateHeight / 4, 0, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // --- 3. Draw the Top Cake Layer ---
+            const topLayerWidth = bottomLayerWidth * 0.75;
+            const topLayerHeight = canvasHeight * 0.18;
+            const topLayerY = bottomLayerY - topLayerHeight;
+            // Body
+            ctx.fillStyle = CAKE_BODY_COLOR;
+            ctx.fillRect(centerX - topLayerWidth / 2, topLayerY, topLayerWidth, topLayerHeight);
+            // Top Icing
+            ctx.fillStyle = CAKE_TOP_COLOR;
+            ctx.beginPath();
+            ctx.ellipse(centerX, topLayerY, topLayerWidth / 2, plateHeight / 4, 0, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // --- 4. Draw the Candles ---
+            const candleCount = 3;
+            const candleWidth = 15;
+            const candleHeight = canvasHeight * 0.15;
+            // Calculate even spacing for the candles on the top layer
+            const candleSpacing = topLayerWidth / (candleCount + 1);
+            const startX = centerX - topLayerWidth / 2 + candleSpacing;
+            const candleY = topLayerY - candleHeight;
+
+            for (let i = 0; i < candleCount; i++) {
+                const x = startX + i * candleSpacing;
+                
+                // Candle Body
+                ctx.fillStyle = CANDLE_COLOR;
+                ctx.fillRect(x - candleWidth / 2, candleY, candleWidth, candleHeight);
+
+                // Wick
+                const wickX = x;
+                const wickY = candleY;
+                const wickHeight = 8;
+                ctx.fillStyle = WICK_COLOR;
+                ctx.fillRect(wickX - 1.5, wickY - wickHeight, 3, wickHeight);
+
+                // Flame
+                if (candlesLit) {
+                    const flameBaseY = wickY - wickHeight;
+                    const flameHeight = 30;
+                    const flameWidth = 15;
+                    
+                    // Outer flame (teardrop shape)
+                    ctx.fillStyle = FLAME_OUTER_COLOR;
+                    ctx.beginPath();
+                    ctx.moveTo(wickX, flameBaseY);
+                    ctx.quadraticCurveTo(wickX + flameWidth, flameBaseY - flameHeight / 2, wickX, flameBaseY - flameHeight);
+                    ctx.quadraticCurveTo(wickX - flameWidth, flameBaseY - flameHeight / 2, wickX, flameBaseY);
+                    ctx.fill();
+
+                    // Inner flame
+                    ctx.fillStyle = FLAME_INNER_COLOR;
+                    ctx.beginPath();
+                    ctx.moveTo(wickX, flameBaseY);
+                    ctx.quadraticCurveTo(wickX + flameWidth / 2, flameBaseY - flameHeight / 2.5, wickX, flameBaseY - flameHeight / 1.5);
+                    ctx.quadraticCurveTo(wickX - flameWidth / 2, flameBaseY - flameHeight / 2.5, wickX, flameBaseY);
+                    ctx.fill();
+                }
+            }
         }
+
 
         // Stops the microphone stream and audio context
         function stopBlowing() {
@@ -147,10 +142,8 @@
                 micStream.getTracks().forEach(track => track.stop());
                 micStream = null;
             }
-            if (audioContext) {
-                if (audioContext.state !== 'closed') {
-                    audioContext.close().catch(e => console.error("关闭 AudioContext 错误:", e));
-                }
+            if (audioContext && audioContext.state !== 'closed') {
+                audioContext.close().catch(e => console.error("Error closing AudioContext:", e));
                 audioContext = null;
             }
             if (animationFrameId) {
@@ -163,14 +156,12 @@
         // Analyzes the microphone audio for "blowing"
         function analyzeAudio() {
             if (!analyser || !candlesLit || isGameEnded) {
-                // 如果游戏结束或蜡烛已熄灭，停止分析循环
-                if (animationFrameId) {
-                    cancelAnimationFrame(animationFrameId);
-                    animationFrameId = null;
-                }
+                stopBlowing();
                 return;
             }
-            
+
+            animationFrameId = requestAnimationFrame(analyzeAudio);
+
             const dataArray = new Uint8Array(analyser.frequencyBinCount);
             analyser.getByteFrequencyData(dataArray);
             let sum = 0;
@@ -178,28 +169,26 @@
                 sum += dataArray[i];
             }
             const average = sum / SAMPLE_SIZE;
-            
+
             if (average > BLOW_THRESHOLD_FIXED) {
                 candlesLit = false;
+                isGameEnded = true;
+                drawScene(); // Final redraw with candles extinguished
+                
                 messageDisplay.textContent = "生日快乐！";
                 messageDisplay.classList.add('text-green-600', 'animate-pulse');
                 messageDisplay.classList.remove('text-gray-700');
-                isGameEnded = true;
-                stopBlowing();
                 
-                // Restore BGM volume
-                if (bgm) {
-                    bgm.volume = 1.0;
+                if (window.bgm) {
+                    window.bgm.volume = 1.0;
                 }
-                
-                // Call the function from the parent window to show the modal
+
                 if (window.showVictoryModal) {
-                    window.showVictoryModal('生日快乐！<br>祝您生日快乐，幸福安康！');
+                    setTimeout(() => {
+                        window.showVictoryModal('生日快乐！<br>祝您生日快乐，幸福安康！');
+                    }, 500); // Short delay before showing modal
                 }
-            } else {
-                animationFrameId = requestAnimationFrame(analyzeAudio);
             }
-            drawScene();
         }
 
         // Starts the microphone access and audio analysis
@@ -207,55 +196,42 @@
             if (isMicActive || isGameEnded) return;
 
             try {
-                // Dim BGM volume before starting mic access
-                if (bgm) {
-                    bgm.volume = 0.2;
+                if (window.bgm) {
+                    window.bgm.volume = 0.2;
                 }
-                
-                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                micStream = stream;
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 analyser = audioContext.createAnalyser();
                 analyser.fftSize = 256;
                 const source = audioContext.createMediaStreamSource(micStream);
                 source.connect(analyser);
-
                 isMicActive = true;
-                micAccessGranted = true;
-                messageDisplay.textContent = "请尝试吹灭蜡烛！";
-                messageDisplay.classList.remove('text-green-600', 'animate-pulse');
-                messageDisplay.classList.add('text-gray-700');
-                
-                animationFrameId = requestAnimationFrame(analyzeAudio);
+                analyzeAudio(); // Start the analysis loop
             } catch (err) {
-                console.error("访问麦克风错误:", err);
-                messageDisplay.textContent = "无法访问麦克风。请授予权限以吹灭蜡烛。";
-                isMicActive = false;
-                micAccessGranted = false;
-                // Restore BGM volume on error
-                if (bgm) {
-                    bgm.volume = 1.0;
+                console.error("Error accessing microphone:", err);
+                messageDisplay.textContent = "无法访问麦克风。请授予权限。";
+                if (window.bgm) {
+                    window.bgm.volume = 1.0;
                 }
             }
-            drawScene();
         }
 
         // Global function to initialize this page, called from index.html
         window.initPage2 = function() {
-            // Get DOM elements here to ensure they exist after content is loaded
             canvas = document.getElementById('birthdayCanvas');
             ctx = canvas.getContext('2d');
             messageDisplay = document.getElementById('messageDisplay');
-            // Safely get the BGM element from the parent window
 
             // Set initial state
             candlesLit = true;
             isMicActive = false;
             isGameEnded = false;
-            
+
             drawScene();
             startBlowing();
-            
-            // 移除旧的事件监听器，避免重复绑定
+
+
             window.removeEventListener('resize', drawScene);
             window.addEventListener('resize', drawScene);
         };
