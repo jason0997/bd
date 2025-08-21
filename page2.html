@@ -180,7 +180,7 @@
                 messageDisplay.classList.remove('text-gray-700');
                 
                 if (window.bgm) {
-                    window.bgm.volume = 1.0;
+                    window.bgm.play();
                 }
 
                 if (window.showVictoryModal) {
@@ -197,7 +197,7 @@
 
             try {
                 if (window.bgm) {
-                    window.bgm.volume = 0.01;
+                    window.bgm.volume.pause();
                 }
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 micStream = stream;
@@ -212,7 +212,7 @@
                 console.error("Error accessing microphone:", err);
                 messageDisplay.textContent = "无法访问麦克风。请授予权限。";
                 if (window.bgm) {
-                    window.bgm.volume = 1.0;
+                    window.bgm.play();
                 }
             }
         }
