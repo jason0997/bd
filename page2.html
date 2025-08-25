@@ -197,7 +197,7 @@
 
             try {
                 if (window.bgm) {
-                    window.bgm.volume.pause();
+                    window.bgm.pause();
                 }
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 micStream = stream;
