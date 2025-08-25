@@ -117,21 +117,18 @@
             let nextImageToDisplayIndex = (currentImageIndex + 1) % totalSlides;
             inactiveImageElement.src = imageUrls[nextImageToDisplayIndex];
 
-            setTimeout(() => {
-                activeImageElement.classList.remove('active');
-                activeImageElement.classList.add('inactive');
-            }, 100);
+            activeImageElement.classList.remove('active');
+            activeImageElement.classList.add('inactive');
+
+            inactiveImageElement.classList.remove('inactive');
+            inactiveImageElement.classList.add('active');
 
             setTimeout(() => {
-                inactiveImageElement.classList.remove('inactive');
-                inactiveImageElement.classList.add('active');
-            }, 200);
-
-
-            const temp = activeImageElement;
-            activeImageElement = inactiveImageElement;
-            inactiveImageElement = temp;
-            currentImageIndex = nextImageToDisplayIndex;
+                const temp = activeImageElement;
+                activeImageElement = inactiveImageElement;
+                inactiveImageElement = temp;
+                currentImageIndex = nextImageToDisplayIndex;
+            }, 500);
         }
 
         function shuffleArray(array) {
@@ -198,7 +195,7 @@
                         cellData.img.style.opacity = 1;
                     }, revealStartDelay + (index * revealStaggerDelay));
                 });
-            }, 500);
+            }, 200);
         }
 
         let slideshowInterval;
